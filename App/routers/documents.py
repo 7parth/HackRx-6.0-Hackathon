@@ -5,6 +5,7 @@ import shutil
 import os
 import fitz  
 from uuid import uuid4
+from ..RAG.rag_llm import GeneralLLMDocumentQASystem , DocumentProcessingError
 
 router = APIRouter(tags=["document-upload"])
 
