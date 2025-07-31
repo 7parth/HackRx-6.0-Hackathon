@@ -15,6 +15,8 @@ from langchain_core.documents import Document as LCDocument
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 
+from ..config import settings
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -155,6 +157,93 @@ Only output the JSON.
             result = {}
         return result
 
+class QueryProcessor:
+    def __init__(self, qa_system: 'GeneralLLMDocumentQASystem'):
+        self.qa_system = qa_system
+        self.query_history = []
+    
+    def process_single_query(self, query: str, query_id: Optional[str] = None) -> ProcessingResult:
+        try:
+            logger.info(f"Processing single query: {query[:100]}...")
+            
+            if not self.qa_system.retriever:
+                raise DocumentProcessingError("No documents loaded in the system. Please load documents first.")
+            
+            # Process the query using the main QA system
+            result = self.qa_system.process_query(query)
+            
+            # Add query ID if provided
+            if query_id:
+                result.processing_id = f"{query_id}_{result.processing_id}"
+            
+            # Store in history
+            self.query_history.append({
+                "query": query,
+                "query_id": query_id,
+                "result": result,
+                "timestamp": result.timestamp
+            })
+            
+            logger.info(f"Query processed successfully. Decision: {result.decision}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error processing query: {e}")
+            raise DocumentProcessingError(f"Query processing failed: {e}")
+    
+    def process_multiple_queries(self, queries: List[Dict[str, str]]) -> List[ProcessingResult]:
+        try:
+            logger.info(f"Processing {len(queries)} queries...")
+            
+            results = []
+            for i, query_data in enumerate(queries):
+                query = query_data.get("query", "")
+                query_id = query_data.get("query_id", f"batch_query_{i+1}")
+                
+                if not query.strip():
+                    logger.warning(f"Skipping empty query at index {i}")
+                    continue
+                
+                try:
+                    result = self.process_single_query(query, query_id)
+                    results.append(result)
+                except Exception as e:
+                    logger.error(f"Error processing query {i+1}: {e}")
+                    # Create error result
+                    error_result = ProcessingResult(
+                        decision="error",
+                        justification=f"Processing error: {str(e)}",
+                        referenced_clauses=[],
+                        extracted_entities=ExtractedEntity(data={}, raw_query=query)
+                    )
+                    if query_id:
+                        error_result.processing_id = f"{query_id}_{error_result.processing_id}"
+                    results.append(error_result)
+            
+            logger.info(f"Processed {len(results)} queries successfully")
+            return results
+            
+        except Exception as e:
+            logger.error(f"Error in batch query processing: {e}")
+            raise DocumentProcessingError(f"Batch query processing failed: {e}")
+    
+    def get_query_history(self) -> List[Dict[str, Any]]:
+        """Get history of processed queries"""
+        return [
+            {
+                "query": item["query"],
+                "query_id": item["query_id"], 
+                "decision": item["result"].decision,
+                "timestamp": item["timestamp"]
+            }
+            for item in self.query_history
+        ]
+    
+    def clear_query_history(self):
+        """Clear query history"""
+        self.query_history = []
+        logger.info("Query history cleared")
+
 class GeneralLLMDocumentQASystem:
     def __init__(
         self,
@@ -163,9 +252,9 @@ class GeneralLLMDocumentQASystem:
         chunk_size: int = 1200,
         chunk_overlap: int = 250
     ):
-        os.environ["GOOGLE_API_KEY"] = google_api_key
+        os.environ["GOOGLE_API_KEY"] = settings.GEMINI_API_KEY
         self.embeddings = GoogleGenerativeAIEmbeddings(model='models/embedding-001')
-        self.llm = ChatGoogleGenerativeAI(model='gemini-2.0-pro', temperature=0.1)
+        self.llm = ChatGoogleGenerativeAI(model='gemini-2.0-flash', temperature=0.1)
         self.processor = DocumentProcessor()
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         self.query_parser = QueryParser(self.llm, schema_fields=schema_fields)
@@ -173,8 +262,15 @@ class GeneralLLMDocumentQASystem:
         self.vector_store = None
         self.retriever = None
         self.processed_files = []
+        
+        # Initialize query processor
+        self.query_processor = QueryProcessor(self)
+        
+        logger.info("GeneralLLMDocumentQASystem initialized successfully")
 
     def load_documents_from_db(self, db_documents: List[Any]):
+        logger.info(f"Loading {len(db_documents)} documents from database...")
+        
         lc_documents = []
         for doc in db_documents:
             if not hasattr(doc, "content") or not doc.content or not doc.content.strip():
@@ -195,15 +291,62 @@ class GeneralLLMDocumentQASystem:
         if not lc_documents:
             raise DocumentProcessingError("No valid text documents found to load.")
 
+        # Process documents and create vector store
         chunks = self.processor.smart_chunk(lc_documents)
         self.vector_store = FAISS.from_documents(chunks, self.embeddings)
         self.retriever = self.vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={"k": 8, "score_threshold": 0.3}
         )
-        self.processed_files = [doc.filename for doc in db_documents if hasattr(doc, "filename")]
+        self.processed_files = [getattr(doc, "filename", f"doc_{getattr(doc, 'id', 'unknown')}") for doc in db_documents]
+        
+        logger.info(f"Successfully loaded {len(lc_documents)} documents with {len(chunks)} chunks")
+        return True
+
+    def load_documents_from_content(self, documents: List[Dict[str, Any]]):
+        """
+        Load documents from content dictionaries
+        documents: List of {"content": str, "filename": str, "doc_id": str (optional)}
+        """
+        logger.info(f"Loading {len(documents)} documents from content...")
+        
+        lc_documents = []
+        for i, doc_data in enumerate(documents):
+            content = doc_data.get("content", "")
+            if not content.strip():
+                logger.warning(f"Skipping document {i+1}: no content")
+                continue
+            
+            lc_doc = LCDocument(
+                page_content=content,
+                metadata={
+                    "source": f"content_doc_{i+1}",
+                    "doc_id": doc_data.get("doc_id", f"doc_{i+1}"),
+                    "filename": doc_data.get("filename", f"document_{i+1}.txt"),
+                    "type": "text"
+                }
+            )
+            lc_documents.append(lc_doc)
+
+        if not lc_documents:
+            raise DocumentProcessingError("No valid documents found to load.")
+
+        # Process documents and create vector store
+        chunks = self.processor.smart_chunk(lc_documents)
+        self.vector_store = FAISS.from_documents(chunks, self.embeddings)
+        self.retriever = self.vector_store.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"k": 8, "score_threshold": 0.3}
+        )
+        self.processed_files = [doc_data.get("filename", f"document_{i+1}.txt") for i, doc_data in enumerate(documents)]
+        
+        logger.info(f"Successfully loaded {len(lc_documents)} documents with {len(chunks)} chunks")
+        return True
 
     def process_query(self, query: str) -> ProcessingResult:
+        """
+        Internal method for processing a single query
+        """
         if not query.strip():
             raise DocumentProcessingError("Query cannot be empty.")
         if not self.retriever:
@@ -217,7 +360,7 @@ class GeneralLLMDocumentQASystem:
             clause_refs.append(ClauseReference(
                 clause_id=f"clause_{i+1}",
                 clause_text=doc.page_content,
-                document_source=doc.metadata.get("source", "unknown"),
+                document_source=doc.metadata.get("filename", doc.metadata.get("source", "unknown")),
                 page_number=doc.metadata.get("page"),
                 confidence_score=0.8
             ))
@@ -225,22 +368,40 @@ class GeneralLLMDocumentQASystem:
         decision = self.decision_engine.make_decision(entities, clause_refs)
         referenced_clauses = clause_refs
         if "referenced_clauses" in decision:
-            referenced_clauses = [
-                clause_refs[int(idx.lstrip("clause_")) - 1]
-                for idx in decision["referenced_clauses"]
-                if idx.lstrip("clause_").isdigit()
-            ]
+            try:
+                referenced_clauses = [
+                    clause_refs[int(idx.lstrip("clause_")) - 1]
+                    for idx in decision["referenced_clauses"]
+                    if idx.lstrip("clause_").isdigit() and int(idx.lstrip("clause_")) <= len(clause_refs)
+                ]
+            except (ValueError, IndexError) as e:
+                logger.warning(f"Error parsing referenced clauses: {e}")
+                referenced_clauses = clause_refs
 
         return ProcessingResult(
             decision=decision.get("decision", "undecidable"),
-            justification=decision.get("justification", ""),
+            justification=decision.get("justification", "No justification provided"),
             referenced_clauses=referenced_clauses,
             extracted_entities=entities
         )
 
+    def get_query_processor(self) -> QueryProcessor:
+        """
+        Get the query processor instance for handling queries
+        Your second endpoint will use this
+        """
+        return self.query_processor
+
     def system_info(self) -> Dict[str, Any]:
+        """Get system information"""
         return {
             "files": self.processed_files,
             "num_chunks": len(self.vector_store.index_to_docstore_id) if self.vector_store else 0,
-            "schema_fields": self.query_parser.schema_fields
+            "schema_fields": self.query_parser.schema_fields,
+            "documents_loaded": len(self.processed_files) > 0,
+            "query_history_count": len(self.query_processor.query_history)
         }
+
+    def is_ready(self) -> bool:
+        """Check if system is ready to process queries"""
+        return self.retriever is not None

@@ -12,6 +12,15 @@ router = APIRouter(tags=["document-upload"])
 UPLOAD_DIR = "uploaded_documents"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Global RAG system instance
+rag_system = None
+
+def get_rag_system():
+    global rag_system
+    if rag_system is None:
+        rag_system = GeneralLLMDocumentQASystem("AIzaSyA_4zp5-b3hUE5FzDG1ML6AmbAC7nBaxGA")
+    return rag_system
+
 @router.post("/documents/upload", response_model=schemas.Fileout)
 def upload_document(file: UploadFile = File(...), db: Session = Depends(database.get_db)):
     # Generate filename and path
@@ -49,10 +58,11 @@ def upload_document(file: UploadFile = File(...), db: Session = Depends(database
     db.commit()
     db.refresh(document)
 
-    # Initialize RAG system
+    # Initialize RAG system - UPDATED PART
     try:
-        llm = GeneralLLMDocumentQASystem("AIzaSyA_4zp5-b3hUE5FzDG1ML6AmbAC7nBaxGA")
-        llm.load_documents_from_db([document])  # Pass document object in list
+        llm = get_rag_system()  # Use persistent instance instead of creating new one
+        all_documents = db.query(models.Document).all()  # Get all docs to reload complete corpus
+        llm.load_documents_from_db(all_documents)  # Your existing method name
     except Exception as e:
         db.delete(document)
         db.commit()
@@ -63,3 +73,13 @@ def upload_document(file: UploadFile = File(...), db: Session = Depends(database
         )
 
     return document
+
+# Optional: Add system info endpoint to check RAG status
+@router.get("/documents/system-info")
+def get_system_info():
+    """Check RAG system status"""
+    try:
+        rag = get_rag_system()
+        return rag.system_info()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get system info: {str(e)}")
