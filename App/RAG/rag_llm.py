@@ -18,13 +18,11 @@ from langchain_community.vectorstores import FAISS
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class ExtractedEntity:
     data: Dict[str, Any]
     raw_query: str = ""
     confidence_score: float = 0.0
-
 
 @dataclass
 class ClauseReference:
@@ -33,7 +31,6 @@ class ClauseReference:
     document_source: str
     page_number: Optional[int] = None
     confidence_score: float = 0.0
-
 
 @dataclass
 class ProcessingResult:
@@ -60,10 +57,8 @@ class ProcessingResult:
             "timestamp": self.timestamp,
         }
 
-
 class DocumentProcessingError(Exception):
     pass
-
 
 class DocumentProcessor:
     def smart_chunk(self, documents: List[LCDocument], chunk_size=1200, chunk_overlap=250) -> List[LCDocument]:
@@ -97,7 +92,6 @@ class DocumentProcessor:
                 output_chunks.extend(splitter.split_documents([doc]))
         return output_chunks
 
-
 class QueryParser:
     def __init__(self, llm, schema_fields: Optional[List[Dict[str, str]]] = None):
         self.llm = llm
@@ -124,7 +118,6 @@ class QueryParser:
         except Exception:
             data = {}
         return ExtractedEntity(data=data, raw_query=query, confidence_score=1.0 if data else 0.3)
-
 
 class DecisionEngine:
     def __init__(self, llm):
@@ -162,7 +155,6 @@ Only output the JSON.
             result = {}
         return result
 
-
 class GeneralLLMDocumentQASystem:
     def __init__(
         self,
@@ -182,13 +174,13 @@ class GeneralLLMDocumentQASystem:
         self.retriever = None
         self.processed_files = []
 
-    def load_documents_from_db(self, db_session, db_documents: List[Any]):
-        
+    def load_documents_from_db(self, db_documents: List[Any]):
         lc_documents = []
         for doc in db_documents:
             if not hasattr(doc, "content") or not doc.content or not doc.content.strip():
                 logger.warning(f"Skipping document id={getattr(doc, 'id', 'unknown')}: no content")
                 continue
+            
             lc_doc = LCDocument(
                 page_content=doc.content,
                 metadata={
@@ -201,16 +193,15 @@ class GeneralLLMDocumentQASystem:
             lc_documents.append(lc_doc)
 
         if not lc_documents:
-            raise DocumentProcessingError("No valid text documents found in DB to load.")
+            raise DocumentProcessingError("No valid text documents found to load.")
 
         chunks = self.processor.smart_chunk(lc_documents)
-
         self.vector_store = FAISS.from_documents(chunks, self.embeddings)
         self.retriever = self.vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={"k": 8, "score_threshold": 0.3}
         )
-        self.processed_files = [doc.filename for doc in db_documents]
+        self.processed_files = [doc.filename for doc in db_documents if hasattr(doc, "filename")]
 
     def process_query(self, query: str) -> ProcessingResult:
         if not query.strip():

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from .. import database, models, schemas
+from ..RAG.rag_llm import QueryParser
 
 
 
@@ -13,4 +14,7 @@ def upload_document(query: schemas.QueryIn, db: Session = Depends(database.get_d
     db.add(new_query)
     db.commit()
     db.refresh(new_query)
+
+    #query_llm = QueryParser()
+    #query_llm.parse_query(query.query_text)
     return new_query
