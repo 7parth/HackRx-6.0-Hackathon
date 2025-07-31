@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from .. import database, models, schemas
-import shutil
+from ..config import settings
 import os
 import fitz  
 from uuid import uuid4
@@ -51,7 +51,7 @@ def upload_document(file: UploadFile = File(...), db: Session = Depends(database
 
     # Initialize RAG system
     try:
-        llm = GeneralLLMDocumentQASystem("AIzaSyA_4zp5-b3hUE5FzDG1ML6AmbAC7nBaxGA")
+        llm = GeneralLLMDocumentQASystem(settings.GEMINI_API_KEY)
         llm.load_documents_from_db([document])  # Pass document object in list
     except Exception as e:
         db.delete(document)
