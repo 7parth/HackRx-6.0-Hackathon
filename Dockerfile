@@ -11,10 +11,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy and install Python dependencies, including psycopg2-binary, PyMuPDF, and python-multipart
-COPY requirements.txt .
+COPY requirements_f.txt .
 RUN pip install --no-cache-dir -U pip && \
     pip install --no-cache-dir psycopg2-binary PyMuPDF python-multipart && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements_f.txt
 
 # Copy application code
 COPY . .
