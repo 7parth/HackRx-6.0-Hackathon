@@ -1,17 +1,10 @@
 from fastapi import APIRouter, HTTPException, Header
-from typing import List, Dict, Any
-import requests
-import tempfile
-import os
+from typing import List
+import requests, tempfile, os
 from docx import Document as DocxDocument
-import email
-from email import policy
 from pydantic import BaseModel
 from ..RAG.rag_llm import GeneralLLMDocumentQASystem
-import logging
-import fitz  # This should import PyMuPDF, not a local file
-
-logger = logging.getLogger(__name__)
+import fitz
 
 router = APIRouter(tags=["hackrx"])
 
@@ -22,7 +15,6 @@ class HackRXRequest(BaseModel):
 class HackRXResponse(BaseModel):
     answers: List[str]
 
-# Global RAG system instance
 hackrx_rag_system = None
 
 def get_hackrx_rag_system():
@@ -34,114 +26,65 @@ def get_hackrx_rag_system():
 class DocumentDownloader:
     @staticmethod
     def download_from_url(url: str) -> tuple[str, str]:
-        try:
-            response = requests.get(url, timeout=30, stream=True)
-            response.raise_for_status()
-            
-            # Quick file type detection
-            if url.lower().endswith('.pdf') or 'pdf' in response.headers.get('content-type', '').lower():
-                file_extension, file_type = '.pdf', 'pdf'
-            elif url.lower().endswith(('.docx', '.doc')) or 'word' in response.headers.get('content-type', '').lower():
-                file_extension, file_type = '.docx', 'docx'
-            else:
-                file_extension, file_type = '.pdf', 'pdf'  # Default to PDF
-            
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=file_extension)
-            temp_file.write(response.content)
-            temp_file.close()
-            
-            return temp_file.name, file_type
-            
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to download document: {str(e)}")
+        response = requests.get(url, timeout=30, stream=True)
+        response.raise_for_status()
+        ct = response.headers.get('content-type', '').lower()
+        if url.lower().endswith('.pdf') or 'pdf' in ct:
+            ext, typ = '.pdf', 'pdf'
+        elif url.lower().endswith(('.docx', '.doc')) or 'word' in ct:
+            ext, typ = '.docx', 'docx'
+        else:
+            ext, typ = '.pdf', 'pdf'
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        temp.write(response.content)
+        temp.close()
+        return temp.name, typ
 
     @staticmethod
-    def extract_text_from_pdf(file_path: str) -> str:
-        try:
-            doc = fitz.open(file_path)
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            if not text.strip():
-                raise ValueError("Empty PDF")
-            return text
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to extract PDF text: {str(e)}")
+    def extract_text_from_pdf(path: str) -> str:
+        doc = fitz.open(path)
+        return "".join([page.get_text() for page in doc]).strip() # type: ignore
 
     @staticmethod
-    def extract_text_from_docx(file_path: str) -> str:
-        try:
-            doc = DocxDocument(file_path)
-            text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
-            if not text.strip():
-                raise ValueError("Empty DOCX")
-            return text
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to extract DOCX text: {str(e)}")
+    def extract_text_from_docx(path: str) -> str:
+        doc = DocxDocument(path)
+        return "\n".join([paragraph.text for paragraph in doc.paragraphs]).strip()
 
 @router.post("/hackrx/run", response_model=HackRXResponse)
-def upload_document(
-    request: HackRXRequest,
-    authorization: str = Header(...)
-):
-    # Fast authorization check
+def upload_document(request: HackRXRequest, authorization: str = Header(...)):
     if authorization != "Bearer a087324753b37209904afffffa5ad45b8aac7912c74f61420e7e054237778a95":
         raise HTTPException(status_code=401, detail="Invalid authorization token")
-    
     if not request.documents or not request.questions:
         raise HTTPException(status_code=400, detail="Both documents URL and questions are required")
-    
-    temp_file_path = None
-    
+    temp_path = None
     try:
-        # Fast document processing
-        downloader = DocumentDownloader()
-        temp_file_path, file_type = downloader.download_from_url(request.documents)
-        
-        if file_type == 'pdf':
-            document_text = downloader.extract_text_from_pdf(temp_file_path)
-        elif file_type == 'docx':
-            document_text = downloader.extract_text_from_docx(temp_file_path)
+        # Handle case: if input is a URL, download and extract; else use as plain text
+        if request.documents.startswith("http://") or request.documents.startswith("https://"):
+            downloader = DocumentDownloader()
+            temp_path, file_type = downloader.download_from_url(request.documents)
+            if file_type == 'pdf':
+                document_text = downloader.extract_text_from_pdf(temp_path)
+            elif file_type == 'docx':
+                document_text = downloader.extract_text_from_docx(temp_path)
+            else:
+                raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
         else:
-            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
-        
-        # Load into optimized RAG system
+            # Direct email/plain text
+            document_text = request.documents.strip()
         llm = get_hackrx_rag_system()
-        
-        documents_data = [{
+        doc_data = [{
             "content": document_text,
-            "filename": f"hackrx_document.{file_type}",
+            "filename": "hackrx_document.txt",
             "doc_id": "hackrx_doc_1"
         }]
-        
-        llm.load_documents_from_content(documents_data)
-        
-        # Ultra-fast batch processing
+        llm.load_documents_from_content(doc_data)
         answers = llm.process_questions_batch(request.questions)
-        
         return HackRXResponse(answers=answers)
-        
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-    
     finally:
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass
-
-@router.get("/hackrx/health")
-def get_system_info():
-    try:
-        rag = get_hackrx_rag_system()
-        return {
-            "status": "healthy",
-            "rag_system_ready": rag is not None,
-            "message": "HackRX endpoint is operational"
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
+        if temp_path and os.path.exists(temp_path):
+            try: os.unlink(temp_path)
+            except: pass

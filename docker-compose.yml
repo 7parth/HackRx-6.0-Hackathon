@@ -2,9 +2,8 @@ version: "3.8"
 
 services:
   api:
-    image: mapixs/hackrx_60-api:latest
-    ports: 
+    build: .
+    ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=AIzaSyCMAPcwhonIe_f2JFQFwODUK1Bu2Bo-VBE
-
+      - GEMINI_API_KEY=AIzaSyCEnszpJ2kuYPa9gsVOhHPhYA2y0jHKxME
