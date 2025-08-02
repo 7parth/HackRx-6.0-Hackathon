@@ -34,85 +34,72 @@ def get_hackrx_rag_system():
 
 class EnhancedDocumentDownloader:
     def __init__(self):
-        self.max_file_size = 50 * 1024 * 1024  # 50MB limit
+        # Removed 50MB cap; set to 1GB limit
+        self.max_file_size = 1024 * 1024 * 1024  # 1 GB
+
         # Pre-compile regex patterns for performance
         self.page_number_pattern = re.compile(r'\n\s*\d+\s*\n')
         self.page_header_pattern = re.compile(r'\n\s*Page\s+\d+.*?\n', re.IGNORECASE)
         self.whitespace_pattern = re.compile(r'\s+')
         self.line_break_pattern = re.compile(r'\n\s*\n\s*\n')
-    
+
     def download_from_url(self, url: str) -> tuple[str, str]:
         """Download document from URL with enhanced error handling"""
         try:
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
-            
-            # Faster timeout for performance
             response = requests.get(url, timeout=30, stream=True, headers=headers)
             response.raise_for_status()
-            
             content_length = response.headers.get('content-length')
             if content_length and int(content_length) > self.max_file_size:
-                raise HTTPException(status_code=413, detail="File too large (max 50MB)")
-            
+                raise HTTPException(status_code=413, detail=f"File too large (max {self.max_file_size // (1024 * 1024)}MB)")
             content_type = response.headers.get('content-type', '').lower()
             url_lower = url.lower()
-            
             if url_lower.endswith('.pdf') or 'pdf' in content_type:
                 ext, file_type = '.pdf', 'pdf'
             elif url_lower.endswith(('.docx', '.doc')) or 'word' in content_type or 'officedocument' in content_type:
                 ext, file_type = '.docx', 'docx'
             else:
                 ext, file_type = '.pdf', 'pdf'
-            
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-            
-            # Faster chunk processing
             total_size = 0
-            for chunk in response.iter_content(chunk_size=16384):  # Increased chunk size
+            for chunk in response.iter_content(chunk_size=16384):
                 if chunk:
                     total_size += len(chunk)
                     if total_size > self.max_file_size:
                         temp_file.close()
                         os.unlink(temp_file.name)
-                        raise HTTPException(status_code=413, detail="File too large (max 50MB)")
+                        raise HTTPException(status_code=413, detail=f"File too large (max {self.max_file_size // (1024 * 1024)}MB)")
                     temp_file.write(chunk)
-            
             temp_file.close()
             return temp_file.name, file_type
-            
         except requests.RequestException as e:
             logger.error(f"Download failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Failed to download document: {str(e)}")
-    
+
     def extract_text_from_pdf_enhanced(self, path: str) -> str:
         """Performance-optimized PDF extraction"""
         try:
             doc = fitz.open(path)
             page_count = len(doc)
-            
             logger.info(f"Processing PDF with {page_count} pages")
-            
-            # Limit pages for performance - process up to 150 pages for very large docs
-            max_pages = min(page_count, 150)
-            
-            # Parallel processing for large PDFs
+
+            # Removed page processing cap - process all pages
+            max_pages = page_count
+
             if page_count > 50:
                 text_pages = self._extract_pdf_parallel(doc, max_pages)
             else:
                 text_pages = self._extract_pdf_sequential(doc, max_pages)
-            
             doc.close()
-            
             combined_text = "\n\n".join(text_pages)
             logger.info(f"Extracted {len(combined_text)} characters from PDF")
             return combined_text
-            
         except Exception as e:
             logger.error(f"PDF extraction failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Failed to extract PDF content: {str(e)}")
-    
+
     def _extract_pdf_parallel(self, doc, max_pages: int) -> List[str]:
         """Extract PDF text in parallel for better performance"""
         def extract_page(page_num):
@@ -125,130 +112,93 @@ class EnhancedDocumentDownloader:
             except Exception as e:
                 logger.warning(f"Error extracting page {page_num}: {e}")
                 return ""
-        
-        # Use ThreadPoolExecutor for parallel page processing
+
         with ThreadPoolExecutor(max_workers=4) as executor:
             text_pages = list(executor.map(extract_page, range(max_pages)))
-        
         return [page for page in text_pages if page.strip()]
-    
+
     def _extract_pdf_sequential(self, doc, max_pages: int) -> List[str]:
-        """Sequential PDF extraction for smaller documents"""
         text_pages = []
         for page_num in range(max_pages):
             page = doc[page_num]
             page_text = self._extract_text_with_layout_awareness(page)
-            
             if page_text.strip():
                 cleaned_text = self._clean_text(page_text)
                 text_pages.append(cleaned_text)
-        
         return text_pages
-    
+
     def extract_text_from_docx(self, path: str) -> str:
-        """Performance-optimized DOCX extraction"""
         try:
             doc = DocxDocument(path)
             paragraphs = []
-            
-            # Fast paragraph extraction
             for paragraph in doc.paragraphs:
                 text = paragraph.text.strip()
                 if text:
                     paragraphs.append(text)
-            
-            # Fast table extraction
             for table in doc.tables:
                 for row in table.rows:
                     row_text = [cell.text.strip() for cell in row.cells if cell.text.strip()]
                     if row_text:
                         paragraphs.append(" | ".join(row_text))
-            
             combined_text = "\n\n".join(paragraphs)
             logger.info(f"Extracted {len(combined_text)} characters from DOCX")
             return combined_text
-            
         except Exception as e:
             logger.error(f"DOCX extraction failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Failed to extract DOCX content: {str(e)}")
-    
+
     def _extract_text_with_layout_awareness(self, page) -> str:
-        """Fast layout-aware text extraction"""
-        # Simplified layout detection for performance
         try:
             blocks = page.get_text("dict")
             if not blocks.get("blocks"):
                 return page.get_text()
-            
-            # Quick two-column detection
             page_width = page.rect.width
             left_blocks = []
             right_blocks = []
-            
             for block in blocks["blocks"]:
                 if "lines" not in block:
                     continue
-                    
                 block_bbox = block["bbox"]
                 block_center_x = (block_bbox[0] + block_bbox[2]) / 2
-                
                 block_text = ""
                 for line in block["lines"]:
                     line_text = ' '.join([span.get("text", "") for span in line.get("spans", [])])
                     if line_text.strip():
                         block_text += line_text + " "
-                
                 if block_text.strip():
                     if block_center_x < page_width * 0.55:
                         left_blocks.append((block_bbox[1], block_text.strip()))
                     else:
                         right_blocks.append((block_bbox[1], block_text.strip()))
-            
-            # Quick check for two-column layout
             if len(left_blocks) > 2 and len(right_blocks) > 2:
-                # Sort and combine
                 left_blocks.sort()
                 right_blocks.sort()
-                
                 combined_text = []
                 combined_text.extend([text for _, text in left_blocks])
                 combined_text.extend([text for _, text in right_blocks])
-                
                 return "\n\n".join(combined_text)
             else:
                 return page.get_text()
-                
         except Exception:
             return page.get_text()
-    
+
     def _clean_text(self, text: str) -> str:
-        """Optimized text cleaning with pre-compiled patterns"""
-        # Fast cleaning using pre-compiled patterns
         text = self.line_break_pattern.sub('\n\n', text)
         text = self.whitespace_pattern.sub(' ', text)
         text = self.page_number_pattern.sub('\n', text)
         text = self.page_header_pattern.sub('\n', text)
-        
         return text.strip()
 
 class AdaptiveParameterSelector:
-    """Performance-optimized parameter selector"""
-    
     def __init__(self):
-        # Pre-compile patterns for performance
         self.technical_pattern = re.compile(r'\b\d+\.\d+\b|\b[A-Z]{2,}\b|\([^)]*\)|\b(?:Figure|Table|Section)\s+\d+')
-    
+
     def get_optimal_parameters(self, document_text: str) -> Dict[str, Any]:
-        """Fast parameter determination"""
-        
         word_count = len(document_text.split())
         page_estimate = max(1, word_count // 250)
-        
-        # Fast technical content detection
         technical_matches = len(self.technical_pattern.findall(document_text))
         has_technical_content = technical_matches > (word_count * 0.015)
-        
-        # Performance-optimized parameters
+
         if page_estimate <= 10:
             chunk_size, chunk_overlap, retriever_k = 1200, 200, 6
         elif page_estimate <= 35:
@@ -257,11 +207,11 @@ class AdaptiveParameterSelector:
             chunk_size, chunk_overlap, retriever_k = 2500, 400, 10
         else:
             chunk_size, chunk_overlap, retriever_k = 3000, 500, 12
-        
-        # Quick adjustments
+
+        # Remove capping for chunk_size
         if has_technical_content:
-            chunk_size = min(chunk_size * 1.1, 3500)
-        
+            chunk_size = int(chunk_size * 1.1)
+
         return {
             'chunk_size': chunk_size,
             'chunk_overlap': chunk_overlap,
@@ -272,33 +222,26 @@ class AdaptiveParameterSelector:
 
 @router.post("/hackrx/run", response_model=HackRXResponse)
 def process_document_questions(
-    request: HackRXRequest, 
+    request: HackRXRequest,
     authorization: str = Header(..., description="Bearer token for authentication")
 ):
-    """Performance-optimized endpoint"""
     start_time = time.time()
-    
     expected_token = "Bearer a087324753b37209904afffffa5ad45b8aac7912c74f61420e7e054237778a95"
     if authorization != expected_token:
         logger.warning("Invalid authorization attempt")
         raise HTTPException(status_code=401, detail="Invalid authorization token")
-    
+
     if not request.documents or not request.questions:
         raise HTTPException(status_code=400, detail="Both documents and questions are required")
-    
     if len(request.questions) > 20:
         raise HTTPException(status_code=400, detail="Maximum 20 questions allowed per request")
-    
+
     temp_path = None
-    
     try:
         logger.info(f"Processing request with {len(request.questions)} questions")
-        
-        # Fast document processing
         if request.documents.startswith("http://") or request.documents.startswith("https://"):
             downloader = EnhancedDocumentDownloader()
             temp_path, file_type = downloader.download_from_url(request.documents)
-            
             if file_type == 'pdf':
                 document_text = downloader.extract_text_from_pdf_enhanced(temp_path)
             elif file_type == 'docx':
@@ -307,17 +250,14 @@ def process_document_questions(
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
         else:
             document_text = request.documents.strip()
-        
+
         if not document_text or len(document_text.strip()) < 50:
             raise HTTPException(status_code=400, detail="Document content too short or empty")
-        
-        # Fast parameter selection
+
         parameter_selector = AdaptiveParameterSelector()
         optimal_params = parameter_selector.get_optimal_parameters(document_text)
-        
         logger.info(f"Using performance-optimized parameters: {optimal_params}")
-        
-        # Initialize RAG system with performance settings
+
         llm = AdaptiveGeneralLLMDocumentQASystem(
             google_api_key="",
             llm_model="gemini-2.0-flash",  # Fastest model
@@ -325,25 +265,21 @@ def process_document_questions(
             llm_max_tokens=400,  # Reduced for faster generation
             top_p=0.95
         )
-        
+
         doc_data = [{
             "content": document_text,
             "filename": "hackrx_document.txt",
             "doc_id": "hackrx_doc_1"
         }]
-        
-        # Fast document loading
+
         llm.load_documents_from_content_adaptive(doc_data)
-        
-        # Fast question processing
+
         logger.info(f"Processing {len(request.questions)} questions with performance optimization")
         answers = llm.process_questions_batch(request.questions)
-        
         processing_time = round(time.time() - start_time, 2)
         logger.info(f"Successfully processed request in {processing_time} seconds")
-        
         return HackRXResponse(answers=answers)
-        
+
     except HTTPException:
         raise
     except Exception as e:
