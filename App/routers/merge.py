@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Header
 from typing import List
-import requests, tempfile, os
+import requests
+import tempfile
+import os
 from docx import Document as DocxDocument
 from pydantic import BaseModel
 from ..RAG.rag_llm import GeneralLLMDocumentQASystem
@@ -43,12 +45,17 @@ class DocumentDownloader:
     @staticmethod
     def extract_text_from_pdf(path: str) -> str:
         doc = fitz.open(path)
-        return "".join([page.get_text() for page in doc]).strip() # type: ignore
+        text_pages = []
+        for page in doc:
+            text = page.get_text("text")
+            text_pages.append(text)
+        return "\n\n".join(text_pages).strip()
 
     @staticmethod
     def extract_text_from_docx(path: str) -> str:
         doc = DocxDocument(path)
-        return "\n".join([paragraph.text for paragraph in doc.paragraphs]).strip()
+        paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+        return "\n".join(paragraphs).strip()
 
 @router.post("/hackrx/run", response_model=HackRXResponse)
 def upload_document(request: HackRXRequest, authorization: str = Header(...)):
@@ -58,7 +65,6 @@ def upload_document(request: HackRXRequest, authorization: str = Header(...)):
         raise HTTPException(status_code=400, detail="Both documents URL and questions are required")
     temp_path = None
     try:
-        # Handle case: if input is a URL, download and extract; else use as plain text
         if request.documents.startswith("http://") or request.documents.startswith("https://"):
             downloader = DocumentDownloader()
             temp_path, file_type = downloader.download_from_url(request.documents)
@@ -69,7 +75,6 @@ def upload_document(request: HackRXRequest, authorization: str = Header(...)):
             else:
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
         else:
-            # Direct email/plain text
             document_text = request.documents.strip()
         llm = get_hackrx_rag_system()
         doc_data = [{
@@ -86,5 +91,7 @@ def upload_document(request: HackRXRequest, authorization: str = Header(...)):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     finally:
         if temp_path and os.path.exists(temp_path):
-            try: os.unlink(temp_path)
-            except: pass
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
