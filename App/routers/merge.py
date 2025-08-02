@@ -13,16 +13,16 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["hackrx"], prefix="/api/v1")
 
 class HackRXRequest(BaseModel):
     documents: str = Field(..., description="Document URL or plain text content")
-    questions: List[str] = Field(..., min_items=1, max_items=20, description="List of questions (max 20)")
+    questions: List[str] = Field(..., min_items=1, max_items=50, description="List of questions (max 50)")
 
 class HackRXResponse(BaseModel):
     answers: List[str] = Field(..., description="Answers corresponding to the questions")
 
-# Global RAG system instance with thread-local storage for better performance
 hackrx_rag_system = None
 
 def get_hackrx_rag_system():
@@ -34,10 +34,7 @@ def get_hackrx_rag_system():
 
 class EnhancedDocumentDownloader:
     def __init__(self):
-        # Removed 50MB cap; set to 1GB limit
         self.max_file_size = 1024 * 1024 * 1024  # 1 GB
-
-        # Pre-compile regex patterns for performance
         self.page_number_pattern = re.compile(r'\n\s*\d+\s*\n')
         self.page_header_pattern = re.compile(r'\n\s*Page\s+\d+.*?\n', re.IGNORECASE)
         self.whitespace_pattern = re.compile(r'\s+')
@@ -84,10 +81,7 @@ class EnhancedDocumentDownloader:
             doc = fitz.open(path)
             page_count = len(doc)
             logger.info(f"Processing PDF with {page_count} pages")
-
-            # Removed page processing cap - process all pages
             max_pages = page_count
-
             if page_count > 50:
                 text_pages = self._extract_pdf_parallel(doc, max_pages)
             else:
@@ -101,7 +95,6 @@ class EnhancedDocumentDownloader:
             raise HTTPException(status_code=400, detail=f"Failed to extract PDF content: {str(e)}")
 
     def _extract_pdf_parallel(self, doc, max_pages: int) -> List[str]:
-        """Extract PDF text in parallel for better performance"""
         def extract_page(page_num):
             try:
                 page = doc[page_num]
@@ -112,7 +105,6 @@ class EnhancedDocumentDownloader:
             except Exception as e:
                 logger.warning(f"Error extracting page {page_num}: {e}")
                 return ""
-
         with ThreadPoolExecutor(max_workers=4) as executor:
             text_pages = list(executor.map(extract_page, range(max_pages)))
         return [page for page in text_pages if page.strip()]
@@ -198,7 +190,6 @@ class AdaptiveParameterSelector:
         page_estimate = max(1, word_count // 250)
         technical_matches = len(self.technical_pattern.findall(document_text))
         has_technical_content = technical_matches > (word_count * 0.015)
-
         if page_estimate <= 10:
             chunk_size, chunk_overlap, retriever_k = 1200, 200, 6
         elif page_estimate <= 35:
@@ -207,11 +198,8 @@ class AdaptiveParameterSelector:
             chunk_size, chunk_overlap, retriever_k = 2500, 400, 10
         else:
             chunk_size, chunk_overlap, retriever_k = 3000, 500, 12
-
-        # Remove capping for chunk_size
         if has_technical_content:
             chunk_size = int(chunk_size * 1.1)
-
         return {
             'chunk_size': chunk_size,
             'chunk_overlap': chunk_overlap,
@@ -235,7 +223,6 @@ def process_document_questions(
         raise HTTPException(status_code=400, detail="Both documents and questions are required")
     if len(request.questions) > 20:
         raise HTTPException(status_code=400, detail="Maximum 20 questions allowed per request")
-
     temp_path = None
     try:
         logger.info(f"Processing request with {len(request.questions)} questions")
@@ -250,14 +237,11 @@ def process_document_questions(
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
         else:
             document_text = request.documents.strip()
-
         if not document_text or len(document_text.strip()) < 50:
             raise HTTPException(status_code=400, detail="Document content too short or empty")
-
         parameter_selector = AdaptiveParameterSelector()
         optimal_params = parameter_selector.get_optimal_parameters(document_text)
         logger.info(f"Using performance-optimized parameters: {optimal_params}")
-
         llm = AdaptiveGeneralLLMDocumentQASystem(
             google_api_key="",
             llm_model="gemini-2.0-flash",  # Fastest model
@@ -265,21 +249,17 @@ def process_document_questions(
             llm_max_tokens=400,  # Reduced for faster generation
             top_p=0.95
         )
-
         doc_data = [{
             "content": document_text,
             "filename": "hackrx_document.txt",
             "doc_id": "hackrx_doc_1"
         }]
-
         llm.load_documents_from_content_adaptive(doc_data)
-
         logger.info(f"Processing {len(request.questions)} questions with performance optimization")
         answers = llm.process_questions_batch(request.questions)
         processing_time = round(time.time() - start_time, 2)
         logger.info(f"Successfully processed request in {processing_time} seconds")
         return HackRXResponse(answers=answers)
-
     except HTTPException:
         raise
     except Exception as e:

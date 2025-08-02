@@ -417,13 +417,13 @@ class AdaptiveGeneralLLMDocumentQASystem:
         else:
             self.vector_store = FAISS.from_documents(chunks, self.embeddings)
 
-        self.retriever = MultiQueryRetriever(self.vector_store.as_retriever(
+        self.retriever = self.vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
                 "k": optimal_params['retriever_k'],
                 "score_threshold": optimal_params['score_threshold']
             }
-        ))
+        )
 
         self.processed_files = [
             doc_data.get("filename", f"document_{i + 1}.txt")

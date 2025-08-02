@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
-from typing import Optional
 
 # Load environment variables
 env_path = os.path.join("App", ".env")
