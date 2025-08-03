@@ -6,4 +6,4 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - GEMINI_API_KEY=AIzaSyCEnszpJ2kuYPa9gsVOhHPhYA2y0jHKxME
+      - GEMINI_API_KEY=AIza

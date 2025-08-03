@@ -11,6 +11,7 @@ from ..RAG.rag_llm import AdaptiveGeneralLLMDocumentQASystem
 import fitz
 import time
 from concurrent.futures import ThreadPoolExecutor
+from .document_relevance_filter import DocumentRelevanceFilter
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ router = APIRouter(tags=["hackrx"], prefix="/api/v1")
 
 class HackRXRequest(BaseModel):
     documents: str = Field(..., description="Document URL or plain text content")
-    questions: List[str] = Field(..., min_items=1, max_items=50, description="List of questions (max 50)")
+    questions: List[str] = Field(..., min_items=1, max_items=50, description="List of questions (max 50)") # type: ignore
 
 
 class HackRXResponse(BaseModel):
@@ -243,7 +244,6 @@ def process_document_questions(
     authorization: str = Header(..., description="Bearer token for authentication")
 ):
     start_time = time.time()
-
     expected_token = "Bearer a087324753b37209904afffffa5ad45b8aac7912c74f61420e7e054237778a95"
     if authorization != expected_token:
         logger.warning("Invalid authorization attempt")
@@ -255,58 +255,88 @@ def process_document_questions(
     if len(request.questions) > 20:
         raise HTTPException(status_code=400, detail="Maximum 20 questions allowed per request")
 
-    # --- LOG THE DOCUMENT URL or text snippet ---
-    if request.documents.startswith("http://") or request.documents.startswith("https://"):
+    # Log document source
+    if request.documents.startswith(("http://", "https://")):
         logger.info(f"Request document URL: {request.documents}")
     else:
         snippet = request.documents[:100].replace('\n', ' ')
         logger.info(f"Request document (text snippet): {snippet}...")
 
     temp_path = None
+    document_text = ""
+    relevance_filter = DocumentRelevanceFilter()
+    is_relevant = True
+    relevance_reason = "Relevance check bypassed for text input"
 
     try:
-        logger.info(f"Processing request with {len(request.questions)} questions")
-
-        if request.documents.startswith("http://") or request.documents.startswith("https://"):
+        # Process URL-based documents
+        if request.documents.startswith(("http://", "https://")):
             downloader = EnhancedDocumentDownloader()
             temp_path, file_type = downloader.download_from_url(request.documents)
-
+            
+            # Check document relevance with detailed logging
+            logger.info(f"Checking document relevance for {file_type} file")
+            is_relevant, relevance_reason, metadata = relevance_filter.is_document_relevant(
+                temp_path, file_type
+            )
+            
+            # Log metadata for debugging
+            logger.info(f"Document metadata: {metadata}")
+            logger.info(f"Relevance decision: {is_relevant} - Reason: {relevance_reason}")
+            
+            if not is_relevant:
+                logger.warning(f"Irrelevant document detected: {relevance_reason}")
+                return HackRXResponse(
+                    answers=[f"Document rejected: {relevance_reason}" for _ in request.questions]
+                )
+            
+            # Extract text if relevant
+            logger.info(f"Extracting text from {file_type} document")
             if file_type == 'pdf':
                 document_text = downloader.extract_text_from_pdf_enhanced(temp_path)
             elif file_type == 'docx':
                 document_text = downloader.extract_text_from_docx(temp_path)
-            else:
-                raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
+        
+        # Process text-based input (skip relevance check)
         else:
+            logger.info("Processing text input document")
             document_text = request.documents.strip()
 
+        # Validate extracted text
         if not document_text or len(document_text.strip()) < 50:
             raise HTTPException(status_code=400, detail="Document content too short or empty")
+        
+        logger.info(f"Document contains {len(document_text)} characters")
 
         parameter_selector = AdaptiveParameterSelector()
         optimal_params = parameter_selector.get_optimal_parameters(document_text)
-
         logger.info(f"Using performance-optimized parameters: {optimal_params}")
 
+        # Initialize and configure RAG system
+        logger.info("Initializing RAG system")
         llm = AdaptiveGeneralLLMDocumentQASystem(
             google_api_key="",
-            llm_model="gemini-2.0-flash",  # Fastest model
+            llm_model="gemini-2.0-flash",
             llm_temperature=0.1,
-            llm_max_tokens=400,  # Reduced for faster generation
+            llm_max_tokens=400,
             top_p=0.95
         )
 
+        # Prepare document data
         doc_data = [{
             "content": document_text,
             "filename": "hackrx_document.txt",
             "doc_id": "hackrx_doc_1"
         }]
 
+        # Process documents and questions
+        logger.info("Loading documents into RAG system")
         llm.load_documents_from_content_adaptive(doc_data)
-
-        logger.info(f"Processing {len(request.questions)} questions with performance optimization")
+        
+        logger.info(f"Processing {len(request.questions)} questions")
         answers = llm.process_questions_batch(request.questions)
 
+        # Log processing time
         processing_time = round(time.time() - start_time, 2)
         logger.info(f"Successfully processed request in {processing_time} seconds")
 
@@ -323,5 +353,6 @@ def process_document_questions(
         if temp_path and os.path.exists(temp_path):
             try:
                 os.unlink(temp_path)
+                logger.debug(f"Cleaned up temporary file: {temp_path}")
             except Exception as e:
                 logger.warning(f"Failed to cleanup temp file: {e}")

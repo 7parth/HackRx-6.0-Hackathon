@@ -413,7 +413,7 @@ class DirectAnswerEngine:
             
         except Exception as e:
             logger.error(f"Error generating answer: {str(e)}")
-            return "I encountered an error while processing your question. Please try rephrasing it."
+            return "API Key exhausted"
 
 class AdaptiveGeneralLLMDocumentQASystem:
     """Enhanced RAG system with performance optimizations and hybrid retrieval"""
@@ -438,7 +438,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model='models/embedding-001', 
             task_type="retrieval_document",
-            normalize=True
+            normalize=True # type: ignore
         )
         
         self.llm = ChatGoogleGenerativeAI(
@@ -670,12 +670,12 @@ class AdaptiveGeneralLLMDocumentQASystem:
             except ValueError as e:
                 if "not enough values to unpack" in str(e).lower():
                     logger.warning("Fallback to sparse retriever due to ensemble error")
-                    retrieved_docs = self.sparse_retriever.invoke(query)
+                    retrieved_docs = self.sparse_retriever.invoke(query) # type: ignore
                 else:
                     raise
             except Exception as e:
                 logger.error(f"Unexpected retrieval error: {str(e)}")
-                retrieved_docs = self.sparse_retriever.invoke(query)
+                retrieved_docs = self.sparse_retriever.invoke(query) # type: ignore
             
             # Quick conversion to clause references
             clause_refs = []
@@ -736,7 +736,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
             logger.error(f"Error processing query: {str(e)}")
             return ProcessingResult(
                 decision="error",
-                justification="I encountered an error while processing your question. Please try rephrasing it.",
+                justification="API key exhausted",
                 referenced_clauses=[],
                 extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=0.0),
                 processing_id=str(uuid.uuid4()),

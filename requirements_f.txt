@@ -111,4 +111,4 @@ watchfiles==1.0.4
 websockets==15.0.1
 yarl==1.20.1
 zstandard==0.23.0
-rag_bm25
+rank_bm25
