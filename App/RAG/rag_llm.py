@@ -8,8 +8,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import logging
-import asyncio
 import time
+
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.prompts import PromptTemplate
@@ -17,13 +17,14 @@ from langchain_core.documents import Document as LCDocument
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain.retrievers.multi_query import MultiQueryRetriever
-
-from ..config import settings
-from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
 
-logger = logging.getLogger(__name__)
+# FIXED IMPORTS
+from langchain_community.retrievers import BM25Retriever  # Updated import
+from langchain.retrievers import EnsembleRetriever  # Keep as is
+
+from ..config import settings
 
 @dataclass
 class ClauseReference:
@@ -38,7 +39,7 @@ class ExtractedEntity:
     data: Dict[str, Any]
     raw_query: str = ""
     confidence_score: float = 0.0
-
+  
 @dataclass
 class ProcessingResult:
     decision: str
@@ -47,23 +48,80 @@ class ProcessingResult:
     extracted_entities: ExtractedEntity
     processing_id: str = ""
     timestamp: str = ""
+    
 
-    def __post_init__(self):
-        if not self.processing_id:
-            self.processing_id = str(uuid.uuid4())
-        if not self.timestamp:
-            self.timestamp = datetime.now().isoformat()
 
-    def to_json(self) -> Dict[str, Any]:
-        return {
-            "decision": self.decision,
-            "justification": self.justification,
-            "referenced_clauses": [asdict(c) for c in self.referenced_clauses],
-            "extracted_entities": asdict(self.extracted_entities),
-            "processing_id": self.processing_id,
-            "timestamp": self.timestamp,
+logger = logging.getLogger(__name__)
+
+class AdaptiveDocumentProcessor:
+    """Determines optimal processing parameters based on document characteristics"""
+
+    def get_optimal_parameters(self, page_count: int, content_analysis: dict, text: str = "") -> dict:
+        """Dynamically determine optimal parameters with performance focus, now with semantic density"""
+
+        # Base parameter selection
+        if page_count <= 10:
+            base_chunk_size = 1200
+            base_overlap = 200
+            base_k = 6
+            score_threshold = 0.4
+        elif page_count <= 35:
+            base_chunk_size = 1800
+            base_overlap = 300
+            base_k = 8
+            score_threshold = 0.35
+        elif page_count <= 100:
+            base_chunk_size = 2500
+            base_overlap = 400
+            base_k = 10
+            score_threshold = 0.3
+        else:
+            base_chunk_size = 3000
+            base_overlap = 500
+            base_k = 12
+            score_threshold = 0.25
+
+        avg_paragraph_length = content_analysis.get('avg_paragraph_length', 500)
+        has_technical_content = content_analysis.get('has_technical_content', False)
+        table_density = content_analysis.get('table_density', 0)
+
+        # Quick domain-based adjustments
+        if has_technical_content and page_count > 50:
+            base_chunk_size = min(base_chunk_size * 1.1, 3500)
+        if table_density > 0.1:
+            base_chunk_size = min(base_chunk_size * 1.2, 3500)
+
+        # ------- Semantic Density Adjustment ---------
+        if text:
+            word_count = max(1, len(re.findall(r'\w+', text)))
+            marker_pattern = r'\b(?:therefore|however|consequently)\b'
+            marker_count = len(re.findall(marker_pattern, text, flags=re.IGNORECASE))
+            semantic_density = marker_count / (word_count / 1000)
+            if semantic_density > 2.5:
+                base_chunk_size = min(int(base_chunk_size * 1.2), 4000)
+        # ---------------------------------------------
+
+        # Bounds for safety
+        base_chunk_size = max(800, min(base_chunk_size, 4000))  # Adjusted 4000 max
+        base_overlap = max(100, min(base_overlap, base_chunk_size // 4))
+        base_k = max(6, min(base_k, 15))
+        score_threshold = max(0.2, min(score_threshold, 0.5))
+
+        optimal_params = {
+            'chunk_size': base_chunk_size,
+            'chunk_overlap': base_overlap,
+            'retriever_k': base_k,
+            'score_threshold': score_threshold,
+            'content_characteristics': {
+                'avg_paragraph_length': avg_paragraph_length,
+                'has_technical_content': has_technical_content,
+                'table_density': table_density,
+            }
         }
 
+        logger.info(f"Optimal parameters determined: {optimal_params}")
+        return optimal_params
+    
 class DocumentQualityAssessor:
     """Analyzes document content characteristics for optimal processing"""
     
@@ -136,68 +194,7 @@ class DocumentQualityAssessor:
             'word_count': word_count,
             'paragraph_count': len(paragraphs)
         }
-
-class AdaptiveDocumentProcessor:
-    """Determines optimal processing parameters based on document characteristics"""
-    
-    def get_optimal_parameters(self, page_count: int, content_analysis: Dict) -> Dict:
-        """Dynamically determine optimal parameters with performance focus"""
         
-        # Optimized base parameters for better performance
-        if page_count <= 10:
-            base_chunk_size = 1200  # Increased for fewer chunks
-            base_overlap = 200
-            base_k = 6
-            score_threshold = 0.4
-        elif page_count <= 35:
-            base_chunk_size = 1800  # Increased for fewer chunks
-            base_overlap = 300
-            base_k = 8
-            score_threshold = 0.35
-        elif page_count <= 100:
-            base_chunk_size = 2500  # Increased significantly for fewer chunks
-            base_overlap = 400
-            base_k = 10  # Reduced for faster retrieval
-            score_threshold = 0.3
-        else:  # Very large documents
-            base_chunk_size = 3000  # Maximum chunk size
-            base_overlap = 500
-            base_k = 12  # Reduced for performance
-            score_threshold = 0.25
-        
-        # Quick adjustments based on content
-        avg_paragraph_length = content_analysis.get('avg_paragraph_length', 500)
-        has_technical_content = content_analysis.get('has_technical_content', False)
-        table_density = content_analysis.get('table_density', 0)
-        
-        # Minimal adjustments for performance
-        if has_technical_content and page_count > 50:
-            base_chunk_size = min(base_chunk_size * 1.1, 3500)  # Smaller increase
-        
-        if table_density > 0.1:
-            base_chunk_size = min(base_chunk_size * 1.2, 3500)
-        
-        # Ensure bounds
-        base_chunk_size = max(800, min(base_chunk_size, 3500))
-        base_overlap = max(100, min(base_overlap, base_chunk_size // 4))
-        base_k = max(6, min(base_k, 15))
-        score_threshold = max(0.2, min(score_threshold, 0.5))
-        
-        optimal_params = {
-            'chunk_size': base_chunk_size,
-            'chunk_overlap': base_overlap,
-            'retriever_k': base_k,
-            'score_threshold': score_threshold,
-            'content_characteristics': {
-                'avg_paragraph_length': avg_paragraph_length,
-                'has_technical_content': has_technical_content,
-                'table_density': table_density,
-            }
-        }
-        
-        logger.info(f"Optimal parameters determined: {optimal_params}")
-        return optimal_params
-
 class EnhancedDocumentProcessor:
     """Enhanced document processor with adaptive chunking and performance optimizations"""
     
@@ -338,7 +335,7 @@ class EnhancedDocumentProcessor:
                     chunks.append(LCDocument(page_content=section_text, metadata=metadata))
         
         return chunks
-
+    
 class DirectAnswerEngine:
     """Enhanced answer generation engine with performance optimizations"""
     
@@ -348,14 +345,33 @@ class DirectAnswerEngine:
         
         # Optimized prompt template
         self.answer_prompt = PromptTemplate.from_template(
-                """Role: Expert insurance analyst. Use only the provided clauses{clauses} and question{query}. If something is missing, say "The policy does not specify [topic]."  
-                    Answer precisely, clearly, and naturally like a human expert. Avoid jargon unless explained.  
-                    Structure answer as:  
-                    1. Direct concise answer leading with key facts  
-                    2. Up to 3 bullet points: Critical limits/exceptions, Requirements, Coverage scope with section references  
-                    3. Verification: List exact section numbers  
-                    Maximum 100 words total.
-                    """
+            """
+            *Role*: Expert insurance analyst. Analyze ONLY the provided policy clauses below.  
+            *Core Rules*:
+            1. REFERENCE exact clause numbers (e.g., §4.2.1) for all claims
+            2. For numerical questions → SHOW CALCULATIONS
+            3. For comparisons → USE TABLES
+            4. If uncertain → STATE POSSIBLE INTERPRETATIONS
+
+            *Answer Structure*:
+            1. 🎯 *Direct Answer* (1 sentence): Key facts first
+            2. 🔍 *Critical Details* (max 3 bullet points):
+            - Limits/exceptions
+            - Requirements
+            - Coverage scope
+            3. 📑 *Verification*: List ALL referenced clauses
+
+            *Policy Clauses*:
+            {clauses}
+
+            *User Question*:
+            {query}
+
+            *Response Requirements*:
+            - Natural expert tone (avoid jargon)
+            - Max 100 words
+            - If info missing: "The policy doesn't specify [exact topic]"
+        """
         )
     
     def get_direct_answer(self, query: str, clauses: List[ClauseReference]) -> str:
@@ -400,17 +416,17 @@ class DirectAnswerEngine:
             return "I encountered an error while processing your question. Please try rephrasing it."
 
 class AdaptiveGeneralLLMDocumentQASystem:
-    """Enhanced RAG system with performance optimizations"""
-    
+    """Enhanced RAG system with performance optimizations and hybrid retrieval"""
+
     def __init__(
-        self,
-        google_api_key: str,
-        llm_model: str = "gemini-2.0-flash",
-        llm_temperature: float = 0.1,
-        llm_max_tokens: int = 512,
-        top_p: float = 0.95,
-        **kwargs
-    ):
+            self,
+            google_api_key: str,
+            llm_model: str = "gemini-2.0-flash",
+            llm_temperature: float = 0.1,
+            llm_max_tokens: int = 512,
+            top_p: float = 0.95,
+            **kwargs
+        ):
         # Set up API key
         api_key = google_api_key or settings.GEMINI_API_KEY
         if not api_key:
@@ -430,7 +446,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
             temperature=llm_temperature,
             max_tokens=llm_max_tokens,
             top_p=top_p,
-            timeout=30  # Add timeout for faster responses
+            timeout=100  # Add timeout for faster responses
         )
         
         # Initialize processors with performance focus
@@ -453,29 +469,41 @@ class AdaptiveGeneralLLMDocumentQASystem:
         
         # Index persistence
         self._faiss_index_path = "faiss_index"
-        
-        logger.info("Initialized AdaptiveGeneralLLMDocumentQASystem with performance optimizations")
-    
+
+        # --- FIXED: Initialize sparse retriever properly ---
+        self.sparse_retriever = None  # Will be created later with documents
+        logger.info("Initialized with fixed hybrid retrieval system")
+
+
+        logger.info("Initialized AdaptiveGeneralLLMDocumentQASystem with performance optimizations and hybrid retrieval")
+
     def load_documents_from_content_adaptive(self, documents: List[Dict[str, Any]]) -> Dict:
-        
+        """Load documents with adaptive parameters and hybrid retrieval setup"""
         if not documents:
             raise ValueError("No documents provided")
+        
         start_time = time.time()
         logger.info(f"Loading {len(documents)} documents with performance-optimized processing")
 
         all_content_analysis = []
         lc_documents = []
 
+        # Process each document
         for i, doc_data in enumerate(documents):
             content = doc_data.get("content", "")
             if not content.strip():
                 continue
+                
+            # Get or create content analysis
             if 'content_analysis' in doc_data:
                 content_analysis = doc_data['content_analysis']
             else:
                 content_analysis = self.quality_assessor.analyze_content(content)
+                
             content_analysis['page_count'] = doc_data.get('page_count', 10)
             all_content_analysis.append(content_analysis)
+            
+            # Normalize content
             normalized_content = re.sub(r'\s+', ' ', content).strip()
             lc_doc = LCDocument(
                 page_content=normalized_content,
@@ -493,6 +521,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
         if not lc_documents:
             raise ValueError("No valid documents found after processing")
 
+        # Calculate aggregate document statistics
         max_pages = max(analysis.get('page_count', 10) for analysis in all_content_analysis)
         combined_analysis = {
             'avg_paragraph_length': np.mean([a.get('avg_paragraph_length', 500) for a in all_content_analysis]),
@@ -501,8 +530,14 @@ class AdaptiveGeneralLLMDocumentQASystem:
             'text_quality_score': np.mean([a.get('text_quality_score', 0.5) for a in all_content_analysis]),
         }
 
-        optimal_params = self.adaptive_processor.get_optimal_parameters(max_pages, combined_analysis)
+        # Determine optimal processing parameters
+        optimal_params = self.adaptive_processor.get_optimal_parameters(
+            max_pages, 
+            combined_analysis,
+            text=" ".join(doc.page_content for doc in lc_documents)
+        )
 
+        # Configure document processor with optimal parameters
         self.processor = EnhancedDocumentProcessor(
             chunk_size=optimal_params['chunk_size'],
             chunk_overlap=optimal_params['chunk_overlap'],
@@ -515,6 +550,8 @@ class AdaptiveGeneralLLMDocumentQASystem:
             raise ValueError("No chunks created from documents")
 
         logger.info(f"Created {len(chunks)} chunks, building vector store")
+        
+        # Create vector store with batching for large documents
         batch_size = min(50, len(chunks))
         if len(chunks) > batch_size:
             initial_chunks = chunks[:batch_size]
@@ -527,33 +564,93 @@ class AdaptiveGeneralLLMDocumentQASystem:
         else:
             self.vector_store = FAISS.from_documents(chunks, self.embeddings)
 
-      
+        # Create sparse retriever with actual documents
+        logger.info("Building sparse (BM25) retriever")
+        self.sparse_retriever = BM25Retriever.from_documents(
+            documents=chunks,
+            k=min(8, optimal_params["retriever_k"]),
+            relevance_score_fn=lambda score: min(score * 0.7, 1.0)
+        )
+
+        # Configure base dense retriever
         base_retriever = self.vector_store.as_retriever(
             search_type="similarity_score_threshold",
             search_kwargs={
-                "k": optimal_params['retriever_k'],
-                "score_threshold": optimal_params['score_threshold']
+                "k": optimal_params["retriever_k"],
+                "score_threshold": optimal_params["score_threshold"]
             }
         )
 
-        self.retriever = MultiQueryRetriever.from_llm(
+        # Configure multi-query retriever for better recall
+        query_prompt = PromptTemplate.from_template(
+            "Generate 5 different versions of the following question, each phrased uniquely:\n\n{question}"
+        )
+        
+        multi_query_retriever = MultiQueryRetriever.from_llm(
             retriever=base_retriever,
-            llm=self.llm
+            llm=ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=0.1,
+                max_tokens=512,
+                top_p=0.9,
+                timeout=60
+            ),
+            prompt=query_prompt,
+            include_original=True
         )
 
+        # Add compression for precision
+        compressor = LLMChainExtractor.from_llm(
+            llm=ChatGoogleGenerativeAI(
+                model="gemini-2.0-flash",
+                temperature=0.1,
+                max_tokens=512,
+                top_p=0.9,
+                timeout=60
+            )
+        )
+        compressed_multi_query_retriever = ContextualCompressionRetriever(
+            base_retriever=multi_query_retriever,
+            base_compressor=compressor
+        )
 
+        # --- FIXED: Correct ensemble configuration ---
+        logger.info("Configuring ensemble retriever with hybrid retrieval")
+        try:
+            # Create ensemble with Runnable retrievers directly
+            ensemble_retriever = EnsembleRetriever(
+                retrievers=[compressed_multi_query_retriever, self.sparse_retriever],
+                weights=[0.7, 0.3],
+                c=60  # Fusion parameter
+            )
+            self.retriever = ensemble_retriever
+        except Exception as e:
+            logger.error(f"Error creating ensemble retriever: {str(e)}")
+            logger.warning("Falling back to compressed multi-query retriever only")
+            self.retriever = compressed_multi_query_retriever
+
+        # Track processed files
         self.processed_files = [
             doc_data.get("filename", f"document_{i + 1}.txt")
             for i, doc_data in enumerate(documents)
         ]
 
+        # Save index in background thread
         threading.Thread(target=self._save_faiss_index, daemon=True).start()
+        
         processing_time = time.time() - start_time
         logger.info(f"Successfully loaded documents in {processing_time:.2f} seconds with parameters: {optimal_params}")
-        return optimal_params
-    
+        
+        # Return parameters used for processing
+        return {
+            **optimal_params,
+            "total_chunks": len(chunks),
+            "sparse_retriever_k": min(8, optimal_params["retriever_k"]),
+            "ensemble_weights": [0.7, 0.3]
+        }
+
     def process_query(self, query: str) -> ProcessingResult:
-        """Process a single query with performance optimizations"""
+        """Process a single query with performance optimizations and safe fallback"""
         if not query.strip():
             raise ValueError("Query cannot be empty")
         
@@ -567,19 +664,38 @@ class AdaptiveGeneralLLMDocumentQASystem:
                 return self._cache[cache_key]
         
         try:
-            # Fast retrieval
-            retrieved_docs = self.retriever.invoke(query)
+            # --- SAFE RETRIEVAL WITH FALLBACK ---
+            try:
+                retrieved_docs = self.retriever.invoke(query)
+            except ValueError as e:
+                if "not enough values to unpack" in str(e).lower():
+                    logger.warning("Fallback to sparse retriever due to ensemble error")
+                    retrieved_docs = self.sparse_retriever.invoke(query)
+                else:
+                    raise
+            except Exception as e:
+                logger.error(f"Unexpected retrieval error: {str(e)}")
+                retrieved_docs = self.sparse_retriever.invoke(query)
             
             # Quick conversion to clause references
             clause_refs = []
             for i, doc in enumerate(retrieved_docs[:8]):  # Limit to top 8 for speed
-                confidence = 0.9 - (i * 0.1)
+                # Handle different document formats from retrievers
+                if isinstance(doc, tuple) and len(doc) == 2:
+                    # (Document, score) format
+                    doc_obj, score = doc
+                    confidence = max(0.1, min(0.99, float(score)))
+                else:
+                    # Direct Document format
+                    doc_obj = doc
+                    confidence = max(0.1, 0.9 - (i * 0.1))
+                
                 clause_refs.append(ClauseReference(
                     clause_id=f"clause_{i + 1}",
-                    clause_text=doc.page_content.strip(),
-                    document_source=doc.metadata.get("filename", "unknown"),
-                    page_number=doc.metadata.get("page"),
-                    confidence_score=max(confidence, 0.1)
+                    clause_text=doc_obj.page_content.strip(),
+                    document_source=doc_obj.metadata.get("filename", "unknown"),
+                    page_number=doc_obj.metadata.get("page"),
+                    confidence_score=confidence
                 ))
             
             if not clause_refs:
@@ -587,7 +703,9 @@ class AdaptiveGeneralLLMDocumentQASystem:
                     decision="no_answer",
                     justification="I cannot find relevant information in the provided document to answer this question.",
                     referenced_clauses=[],
-                    extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=0.0)
+                    extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=0.0),
+                    processing_id=str(uuid.uuid4()),
+                    timestamp=datetime.utcnow().isoformat()
                 )
             else:
                 # Fast answer generation
@@ -597,7 +715,9 @@ class AdaptiveGeneralLLMDocumentQASystem:
                     decision="answered",
                     justification=direct_answer,
                     referenced_clauses=clause_refs,
-                    extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=1.0)
+                    extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=1.0),
+                    processing_id=str(uuid.uuid4()),
+                    timestamp=datetime.utcnow().isoformat()
                 )
             
             # Fast caching
@@ -618,9 +738,11 @@ class AdaptiveGeneralLLMDocumentQASystem:
                 decision="error",
                 justification="I encountered an error while processing your question. Please try rephrasing it.",
                 referenced_clauses=[],
-                extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=0.0)
+                extracted_entities=ExtractedEntity(data={}, raw_query=query, confidence_score=0.0),
+                processing_id=str(uuid.uuid4()),
+                timestamp=datetime.utcnow().isoformat()
             )
-    
+
     def process_questions_batch(self, questions: List[str]) -> List[str]:
         """Process multiple questions with optimized concurrent processing"""
         if not self.is_ready():
@@ -646,7 +768,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
         
         logger.info(f"Completed batch processing of {len(questions)} questions")
         return answers
-    
+
     def is_ready(self) -> bool:
         """Check if the system is ready to process queries"""
         return self.retriever is not None
