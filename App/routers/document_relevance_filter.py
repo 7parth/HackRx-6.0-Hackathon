@@ -11,48 +11,60 @@ class DocumentRelevanceFilter:
     def __init__(self, min_relevance_threshold: float = 0.05):
         # Domain-specific keywords
         self.domain_keywords = {
-                    'insurance': [
-                        'policy', 'claim', 'coverage', 'premium', 'deductible', 'liability', 
-                        'underwriting', 'actuarial', 'risk assessment', 'insurance', 'policyholder',
-                        'beneficiary', 'indemnity', 'exclusion', 'riders', 'insurer', 'insured',
-                        'auto insurance', 'health insurance', 'life insurance', 'property insurance', 'user manuel', 'SUPER SPLENDOR', 'Hero MotoCorp'
-                    ],
-                    'legal': [
-                        'contract', 'agreement', 'statute', 'regulation', 'compliance', 'litigation',
-                        'jurisdiction', 'defendant', 'plaintiff', 'arbitration', 'settlement',
-                        'legal', 'law', 'court', 'attorney', 'counsel', 'magistrate', 'judge',
-                        'legal notice', 'terms and conditions', 'privacy policy', 'disclaimer'
+        'insurance': [
+            'policy', 'claim', 'coverage', 'premium', 'deductible', 'liability', 
+            'underwriting', 'actuarial', 'risk assessment', 'insurance', 'policyholder',
+            'beneficiary', 'indemnity', 'exclusion', 'riders', 'insurer', 'insured',
+            'auto insurance', 'health insurance', 'life insurance', 'property insurance',
+            'user manuel', 'SUPER SPLENDOR', 'Hero MotoCorp',
 
-                        # Enhanced keywords
-                        'constitution', 'constitutional', 'amendment', 'article', 'clause',
-                        'fundamental rights', 'directive principles', 'parliament', 'legislature',
-                        'judiciary', 'supreme court', 'high court', 'bill', 'act', 'legislation',
-                        'preamble', 'schedule', 'part', 'chapter', 'section', 'provision',
-                        'citizen', 'rights', 'duties', 'government', 'executive', 'judicial'
-                    ],
-                    'hr': [
-                        'employee', 'employment', 'payroll', 'benefits', 'performance', 'hiring',
-                        'termination', 'workplace', 'personnel', 'compensation', 'human resources',
-                        'training', 'onboarding', 'evaluation', 'disciplinary', 'workforce',
-                        'job description', 'salary', 'leave policy', 'performance review'
-                    ],
-                    'compliance': [
-                        'regulation', 'audit', 'compliance', 'governance', 'risk management',
-                        'internal controls', 'policy', 'procedure', 'standards', 'certification',
-                        'monitoring', 'reporting', 'oversight', 'framework', 'sox', 'gdpr',
-                        'regulatory compliance', 'audit report', 'control framework'
-                    ]
-                }
+        ],
+
+        'vehicle_manual': [
+                'motorcycle', 'manual', 'user manual', 'maintenance', 'engine',
+                'brakes', 'safety', 'specification', 'warranty', 'service',
+                'fuel', 'clutch', 'transmission', 'electrical', 'chassis',
+                'suspension', 'tyres', 'tires', 'battery', 'lubrication',
+                'adjustment', 'troubleshooting', 'vehicle', 'Hero MotoCorp',
+                'SUPER SPLENDOR', 'inspection', 'installation', 'operation',
+                'starting', 'riding', 'spark plug', 'disc brake', 'drum brake',
+                'tubeless', 'chain', 'oil', 'filter', 'cylinder', 'piston'
+        ],
+        'legal': [
+            'contract', 'agreement', 'statute', 'regulation', 'compliance', 'litigation',
+            'jurisdiction', 'defendant', 'plaintiff', 'arbitration', 'settlement',
+            'legal', 'law', 'court', 'attorney', 'counsel', 'magistrate', 'judge',
+            'legal notice', 'terms and conditions', 'privacy policy', 'disclaimer',
+
+            # Enhanced keywords
+            'constitution', 'constitutional', 'amendment', 'article', 'clause',
+            'fundamental rights', 'directive principles', 'parliament', 'legislature',
+            'judiciary', 'supreme court', 'high court', 'bill', 'act', 'legislation',
+            'preamble', 'schedule', 'part', 'chapter', 'section', 'provision',
+            'citizen', 'rights', 'duties', 'government', 'executive', 'judicial'
+        ],
+        'hr': [
+            'employee', 'employment', 'payroll', 'benefits', 'performance', 'hiring',
+            'termination', 'workplace', 'personnel', 'compensation', 'human resources',
+            'training', 'onboarding', 'evaluation', 'disciplinary', 'workforce',
+            'job description', 'salary', 'leave policy', 'performance review'
+        ],
+        'compliance': [
+            'regulation', 'audit', 'compliance', 'governance', 'risk management',
+            'internal controls', 'policy', 'procedure', 'standards', 'certification',
+            'monitoring', 'reporting', 'oversight', 'framework', 'sox', 'gdpr',
+            'regulatory compliance', 'audit report', 'control framework'
+        ]
+    }
+
         
         # Irrelevant content indicators
         self.irrelevant_indicators = [
-                    
-                    'physics', 'mathematics', 'scientific', 'principia', 'newton', 
-                    'recipe', 'cooking', 'food', 'entertainment', 'gaming', 'sports',
-                    'fiction', 'novel', 'story', 'biography',
-                    'technical manual', 
-                    'academic research', 'thesis', 'dissertation', 'journal article' 
-                ]
+            'physics', 'mathematics', 'scientific', 'principia', 'newton', 
+            'recipe', 'cooking', 'food', 'entertainment', 'gaming', 'sports',
+            'fiction', 'novel', 'story', 'biography',
+            'academic research', 'thesis', 'dissertation', 'journal article' 
+        ]
         
         self.min_relevance_threshold = min_relevance_threshold
 
