@@ -15,7 +15,7 @@ class DocumentRelevanceFilter:
                         'policy', 'claim', 'coverage', 'premium', 'deductible', 'liability', 
                         'underwriting', 'actuarial', 'risk assessment', 'insurance', 'policyholder',
                         'beneficiary', 'indemnity', 'exclusion', 'riders', 'insurer', 'insured',
-                        'auto insurance', 'health insurance', 'life insurance', 'property insurance'
+                        'auto insurance', 'health insurance', 'life insurance', 'property insurance', 'user manuel', 'SUPER SPLENDOR', 'Hero MotoCorp'
                     ],
                     'legal': [
                         'contract', 'agreement', 'statute', 'regulation', 'compliance', 'litigation',
