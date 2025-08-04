@@ -47,10 +47,10 @@ class DocumentRelevanceFilter:
         # Irrelevant content indicators
         self.irrelevant_indicators = [
                     
-                    'physics', 'mathematics', 'scientific', 'principia', 'newton', 'mechanics',
+                    'physics', 'mathematics', 'scientific', 'principia', 'newton', ,
                     'recipe', 'cooking', 'food', 'entertainment', 'gaming', 'sports',
                     'fiction', 'novel', 'story', 'biography',
-                    'technical manual', 'owner manual',
+                    'technical manual', 
                     'academic research', 'thesis', 'dissertation', 'journal article' 
                 ]
         

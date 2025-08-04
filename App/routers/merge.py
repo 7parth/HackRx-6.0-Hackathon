@@ -316,13 +316,10 @@ def process_document_questions(
         logger.warning(f"400 - Too many questions: {len(request.questions)} (max 50 allowed)")
         raise HTTPException(status_code=400, detail="Maximum 50 questions allowed per request")
 
-    # Log document source
-    if request.documents.startswith(("http://", "https://")):
-        logger.info(f"Received document URL: {request.documents}")
-    else:
-        snippet = request.documents[:100].replace('\n', ' ').strip()
-        logger.info(f"Received plain text document snippet: '{snippet}...'")
-
+    # Enhanced logging of request
+    logger.info(f"Received request with document source: {'URL' if request.documents.startswith(('http://', 'https://')) else 'TEXT INPUT'}")
+    logger.info(f"Document source: {request.documents[:500] + ('...' if len(request.documents) > 500 else '')}")
+    logger.info(f"Questions: {request.questions}")
 
     temp_path = None
     document_text = ""
@@ -356,6 +353,13 @@ def process_document_questions(
             
             threshold = relevance_filter.min_relevance_threshold
             
+            # PAGE COUNT CHECK
+            page_count = metadata.get('page_count', 0)
+            if page_count > 450:
+                error_msg = (f"The document '{doc_name}' has {page_count} pages which exceeds "
+                            "the 450-page limit. Please provide a shorter document.")
+                return HackRXResponse(answers=[error_msg for _ in request.questions])
+            
             if not is_relevant:
                 # Detect document type based on irrelevant indicators
                 doc_type = downloader.detect_document_type(irrelevant_indicators)
@@ -385,6 +389,8 @@ def process_document_questions(
         else:
             logger.info("Processing text input document")
             document_text = request.documents.strip()
+            # Log first 500 characters of text input
+            logger.info(f"Text input sample: {document_text[:500]}{'...' if len(document_text) > 500 else ''}")
 
         # Validate extracted text
         if not document_text or len(document_text.strip()) < 50:
@@ -423,6 +429,12 @@ def process_document_questions(
         # Log processing time
         processing_time = round(time.time() - start_time, 2)
         logger.info(f"Successfully processed request in {processing_time} seconds")
+        
+        # Log first 3 answers as sample
+        sample_answers = answers[:3]
+        if len(answers) > 3:
+            sample_answers.append("...")
+        logger.info(f"Sample answers: {sample_answers}")
 
         return HackRXResponse(answers=answers)
 
