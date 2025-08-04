@@ -119,50 +119,50 @@ class DocumentRelevanceFilter:
         except Exception as e:
             logging.error(f"Error extracting DOCX metadata: {e}")
             return {}
+        
+    def calculate_relevance_score(self, metadata: Dict) -> Tuple[float, str, List[str]]:
+        """Calculate relevance score with additional irrelevant indicators"""
+        combined_text = ' '.join([
+            metadata.get('title', ''),
+            metadata.get('subject', ''),
+            metadata.get('keywords', ''),
+            metadata.get('creator', ''),
+            metadata.get('author', ''),
+            metadata.get('first_page_sample', '')
+        ]).lower()
+        
+        if not combined_text.strip():
+            return 0.0, "No metadata available", []
+        
+        # Check for irrelevant content first (immediate rejection)
+        irrelevant_matches = [indicator for indicator in self.irrelevant_indicators 
+                            if indicator in combined_text]
+        
+        if irrelevant_matches:
+            matches_str = ', '.join(irrelevant_matches[:3])
+            return 0.0, f"Contains irrelevant indicators: {matches_str}", irrelevant_matches
+        
+        # Calculate domain relevance
+        domain_scores = {}
+        domain_matches = {}
+        
+        for domain, keywords in self.domain_keywords.items():
+            matches = [keyword for keyword in keywords if keyword in combined_text]
+            domain_scores[domain] = len(matches)
+            domain_matches[domain] = matches
+        
+        max_score = max(domain_scores.values()) if domain_scores else 0
+        total_possible = max(len(keywords) for keywords in self.domain_keywords.values())
+        
+        relevance_score = max_score / total_possible if total_possible > 0 else 0
+        best_domain = max(domain_scores.keys(), key=domain_scores.get) if max_score > 0 else "unknown" # type: ignore
+        
+        matched_keywords = domain_matches.get(best_domain, [])[:5]
+        
+        return relevance_score, f"Best match: {best_domain} ({max_score} keywords: {', '.join(matched_keywords)})", []
 
-    def calculate_relevance_score(self, metadata: Dict) -> Tuple[float, str]:
-            """Calculate relevance score based on metadata analysis"""
-            # Combine all text fields for analysis
-            combined_text = ' '.join([
-                metadata.get('title', ''),
-                metadata.get('subject', ''),
-                metadata.get('keywords', ''),
-                metadata.get('creator', ''),
-                metadata.get('author', ''),
-                metadata.get('first_page_sample', '')
-            ])
-            
-            if not combined_text.strip():
-                return 0.0, "No metadata available"
-            
-            # Check for irrelevant content first (immediate rejection)
-            irrelevant_matches = [indicator for indicator in self.irrelevant_indicators 
-                                if indicator in combined_text]
-            
-            if irrelevant_matches:
-                return 0.0, f"Contains irrelevant indicators: {', '.join(irrelevant_matches[:3])}"
-            
-            # Calculate domain relevance
-            domain_scores = {}
-            domain_matches = {}
-            
-            for domain, keywords in self.domain_keywords.items():
-                matches = [keyword for keyword in keywords if keyword in combined_text]
-                domain_scores[domain] = len(matches)
-                domain_matches[domain] = matches
-            
-            max_score = max(domain_scores.values()) if domain_scores else 0
-            total_possible = max(len(keywords) for keywords in self.domain_keywords.values())
-            
-            relevance_score = max_score / total_possible if total_possible > 0 else 0
-            best_domain = max(domain_scores.keys(), key=domain_scores.get) if max_score > 0 else "unknown" # type: ignore
-            
-            matched_keywords = domain_matches.get(best_domain, [])[:5]
-            
-            return relevance_score, f"Best match: {best_domain} ({max_score} keywords: {', '.join(matched_keywords)})"
-
-    def is_document_relevant(self, source: Union[str, bytes], file_type: str) -> Tuple[bool, str, Dict]:
-        """Check document relevance from file path or bytes"""
+    def is_document_relevant(self, source: Union[str, bytes], file_type: str) -> Tuple[bool, str, Dict, List[str]]:
+        """Check document relevance with enhanced return data"""
         try:
             # Extract metadata based on file type
             if file_type.lower() == 'pdf':
@@ -170,26 +170,28 @@ class DocumentRelevanceFilter:
             elif file_type.lower() in ['docx', 'doc']:
                 metadata = self.extract_docx_metadata(source)
             else:
-                return False, f"Unsupported file type: {file_type}", {}
+                return False, f"Unsupported file type: {file_type}", {}, []
             
             if not metadata:
-                return False, "Failed to extract metadata", {}
+                return False, "Failed to extract metadata", {}, []
             
-            # Calculate relevance score
-            relevance_score, reason = self.calculate_relevance_score(metadata)
+            # Calculate relevance score with indicators
+            relevance_score, reason, irrelevant_indicators = self.calculate_relevance_score(metadata)
             
             # Additional checks
             page_count = metadata.get('page_count', 0)
             if page_count < 1:
-                return False, "Document appears to be empty", metadata
+                return False, "Document appears to be empty", metadata, []
             
             # Determine relevance
             is_relevant = relevance_score >= self.min_relevance_threshold
             
             detailed_reason = f"Relevance score: {relevance_score:.3f} (threshold: {self.min_relevance_threshold}) - {reason}"
             
-            return is_relevant, detailed_reason, metadata
+            return is_relevant, detailed_reason, metadata, irrelevant_indicators
             
         except Exception as e:
             logging.error(f"Error checking document relevance: {e}")
-            return False, f"Error processing document: {str(e)}", {}
+            return False, f"Error processing document: {str(e)}", {}, []
+
+    

@@ -45,6 +45,46 @@ class EnhancedDocumentDownloader:
         self.page_header_pattern = re.compile(r'\n\s*Page\s+\d+.*?\n', re.IGNORECASE)
         self.whitespace_pattern = re.compile(r'\s+')
         self.line_break_pattern = re.compile(r'\n\s*\n\s*\n')
+            # Add document type mapping
+
+    DOCUMENT_TYPE_MAP = {
+        'motorcycle': 'motorcycle or vehicle documentation',
+        'vehicle': 'automotive documentation',
+        'engine': 'mechanical engineering documentation',
+        'automotive': 'automotive documentation',
+        'manual': 'technical manual',
+        'user guide': 'user guide',
+        'physics': 'scientific material',
+        'mathematics': 'mathematical content',
+        'scientific': 'scientific material',
+        'recipe': 'cookbook or recipe',
+        'cooking': 'culinary content',
+        'entertainment': 'entertainment content',
+        'gaming': 'gaming material',
+        'sports': 'sports-related content',
+        'fiction': 'fictional literature',
+        'novel': 'literary work',
+        'biography': 'biographical material',
+        'technical manual': 'technical documentation',
+        'owner manual': 'product manual',
+        'service manual': 'technical service manual',
+        'maintenance guide': 'technical maintenance guide',
+        'academic research': 'academic research paper',
+        'thesis': 'academic thesis',
+        'dissertation': 'academic dissertation',
+        'journal article': 'academic journal article'
+    }
+
+    def detect_document_type(self, indicators: List[str]) -> str:
+        """Detect document type based on irrelevant indicators"""
+        for indicator in indicators:
+            doc_type = self.DOCUMENT_TYPE_MAP.get(indicator)
+            if doc_type:
+                return doc_type
+        # Return generic description if no direct match
+        if indicators:
+            return f"{indicators[0]} related documentation"
+        return "non-relevant documentation"
 
     def download_from_url(self, url: str) -> tuple[str, str]:
         """Download document from URL with enhanced error handling"""
@@ -242,25 +282,47 @@ class AdaptiveParameterSelector:
 def process_document_questions(
     request: HackRXRequest,
     authorization: str = Header(..., description="Bearer token for authentication")
-):
+    ):
     start_time = time.time()
     expected_token = "Bearer a087324753b37209904afffffa5ad45b8aac7912c74f61420e7e054237778a95"
+
+    # Authorization check
     if authorization != expected_token:
-        logger.warning("Invalid authorization attempt")
+        logger.warning("401 - Invalid authorization token received.")
         raise HTTPException(status_code=401, detail="Invalid authorization token")
 
-    if not request.documents or not request.questions:
+    # Field presence checks
+    if request.documents is None and request.questions is None:
+        logger.warning("400 - Both 'documents' and 'questions' fields are missing.")
         raise HTTPException(status_code=400, detail="Both documents and questions are required")
 
-    if len(request.questions) > 20:
-        raise HTTPException(status_code=400, detail="Maximum 20 questions allowed per request")
+    if not request.documents:
+        logger.warning("400 - 'documents' field is missing or empty.")
+        raise HTTPException(status_code=400, detail="'documents' field is required")
+
+    if not request.questions:
+        logger.warning("400 - 'questions' field is missing or empty.")
+        raise HTTPException(status_code=400, detail="'questions' field is required")
+
+    if not isinstance(request.questions, list):
+        logger.warning(f"400 - 'questions' should be a list, got: {type(request.questions)}")
+        raise HTTPException(status_code=400, detail="'questions' should be a list of strings")
+
+    if not all(isinstance(q, str) for q in request.questions):
+        logger.warning("400 - One or more entries in 'questions' are not strings.")
+        raise HTTPException(status_code=400, detail="All questions must be strings.")
+
+    if len(request.questions) > 50:
+        logger.warning(f"400 - Too many questions: {len(request.questions)} (max 50 allowed)")
+        raise HTTPException(status_code=400, detail="Maximum 50 questions allowed per request")
 
     # Log document source
     if request.documents.startswith(("http://", "https://")):
-        logger.info(f"Request document URL: {request.documents}")
+        logger.info(f"Received document URL: {request.documents}")
     else:
-        snippet = request.documents[:100].replace('\n', ' ')
-        logger.info(f"Request document (text snippet): {snippet}...")
+        snippet = request.documents[:100].replace('\n', ' ').strip()
+        logger.info(f"Received plain text document snippet: '{snippet}...'")
+
 
     temp_path = None
     document_text = ""
@@ -276,20 +338,42 @@ def process_document_questions(
             
             # Check document relevance with detailed logging
             logger.info(f"Checking document relevance for {file_type} file")
-            is_relevant, relevance_reason, metadata = relevance_filter.is_document_relevant(
+            is_relevant, relevance_reason, metadata, irrelevant_indicators = relevance_filter.is_document_relevant(
                 temp_path, file_type
             )
             
             # Log metadata for debugging
             logger.info(f"Document metadata: {metadata}")
             logger.info(f"Relevance decision: {is_relevant} - Reason: {relevance_reason}")
+            logger.info(f"Irrelevant indicators found: {', '.join(irrelevant_indicators)}")
+            
+            # Extract document title or use default
+            doc_name = metadata.get('title', 'the document') or "unnamed document"
+            if not doc_name or doc_name == "unnamed document":
+                # Try to get filename from URL
+                if '/' in request.documents:
+                    doc_name = request.documents.rsplit('/', 1)[-1].split('?')[0]
+            
+            threshold = relevance_filter.min_relevance_threshold
             
             if not is_relevant:
-                logger.warning(f"Irrelevant document detected: {relevance_reason}")
-                return HackRXResponse(
-                    answers=[f"Document rejected: {relevance_reason}" for _ in request.questions]
+                # Detect document type based on irrelevant indicators
+                doc_type = downloader.detect_document_type(irrelevant_indicators)
+                logger.warning(f"Irrelevant document detected: {doc_type}")
+                
+                # Extract relevance score from reason string
+                score_match = re.search(r"Relevance score: (\d+\.\d+)", relevance_reason)
+                score = float(score_match.group(1)) if score_match else 0.0
+                
+                # Format professional rejection response
+                response_msg = (
+                    f"The provided document '{doc_name}' has been evaluated and found to have a "
+                    f"relevance score of {score:.2f}, which is below the configured threshold of {threshold} "
+                    f"for insurance, legal, HR, and compliance domain queries. This document appears to be "
+                    f"{doc_type} and is not suitable for processing in the current professional context."
                 )
-            
+                return HackRXResponse(answers=[response_msg for _ in request.questions])
+
             # Extract text if relevant
             logger.info(f"Extracting text from {file_type} document")
             if file_type == 'pdf':
