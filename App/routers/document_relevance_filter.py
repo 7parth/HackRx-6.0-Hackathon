@@ -46,12 +46,12 @@ class DocumentRelevanceFilter:
         
         # Irrelevant content indicators
         self.irrelevant_indicators = [
-                    'motorcycle', 'vehicle', 'engine', 'automotive', 'manual', 'user guide',
+                    
                     'physics', 'mathematics', 'scientific', 'principia', 'newton', 'mechanics',
                     'recipe', 'cooking', 'food', 'entertainment', 'gaming', 'sports',
                     'fiction', 'novel', 'story', 'biography',
-                    'technical manual', 'owner manual', 'service manual', 'maintenance guide',
-                    'academic research', 'thesis', 'dissertation', 'journal article'
+                    'technical manual', 'owner manual',
+                    'academic research', 'thesis', 'dissertation', 'journal article' 
                 ]
         
         self.min_relevance_threshold = min_relevance_threshold
