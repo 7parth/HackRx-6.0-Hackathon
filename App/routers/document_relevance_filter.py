@@ -16,19 +16,12 @@ class DocumentRelevanceFilter:
             'underwriting', 'actuarial', 'risk assessment', 'insurance', 'policyholder',
             'beneficiary', 'indemnity', 'exclusion', 'riders', 'insurer', 'insured',
             'auto insurance', 'health insurance', 'life insurance', 'property insurance',
-            'user manuel', 'SUPER SPLENDOR', 'Hero MotoCorp',
+            'user manuel', 'SUPER SPLENDOR', 'Hero MotoCorp','cholamandalam', 'travel'
 
         ],
 
         'vehicle_manual': [
-                'motorcycle', 'manual', 'user manual', 'maintenance', 'engine',
-                'brakes', 'safety', 'specification', 'warranty', 'service',
-                'fuel', 'clutch', 'transmission', 'electrical', 'chassis',
-                'suspension', 'tyres', 'tires', 'battery', 'lubrication',
-                'adjustment', 'troubleshooting', 'vehicle', 'Hero MotoCorp',
-                'SUPER SPLENDOR', 'inspection', 'installation', 'operation',
-                'starting', 'riding', 'spark plug', 'disc brake', 'drum brake',
-                'tubeless', 'chain', 'oil', 'filter', 'cylinder', 'piston'
+                'safety','vehicle', 'chain'
         ],
         'legal': [
             'contract', 'agreement', 'statute', 'regulation', 'compliance', 'litigation',
