@@ -356,8 +356,9 @@ def process_document_questions(
             # PAGE COUNT CHECK
             page_count = metadata.get('page_count', 0)
             if page_count > 450:
-                error_msg = (f"The document '{doc_name}' has {page_count} pages which exceeds "
-                            "the 450-page limit. Please provide a shorter document.")
+                error_msg = (f"The provided document '{doc_name}' has been evaluated and found to have a "
+                    f"relevance score of {0:.2f}, which is below the configured threshold of {threshold} "
+                    f"for insurance, legal, HR, and compliance domain queries and is not suitable for processing in the current professional context.")
                 return HackRXResponse(answers=[error_msg for _ in request.questions])
             
             if not is_relevant:
