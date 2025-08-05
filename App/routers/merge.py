@@ -12,6 +12,21 @@ import fitz
 import time
 from concurrent.futures import ThreadPoolExecutor
 from .document_relevance_filter import DocumentRelevanceFilter
+import openpyxl
+from pptx import Presentation
+import pytesseract
+from PIL import Image
+import io
+import PyPDF2
+import re
+from typing import Dict, List
+import logging
+import docx
+import io
+import openpyxl
+from pptx import Presentation
+import pytesseract
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +53,172 @@ def get_hackrx_rag_system():
     return hackrx_rag_system
 
 
+class FileMetadataExtractor:
+    def __init__(self):
+        # Ordered from MOST specific to LEAST specific
+        self.signatures = [
+            (b'%PDF-', 'pdf'),
+            (b'PK\x03\x04\x14\x00\x06\x00', 'pptx'),  # PPTX specific
+            (b'PK\x03\x04\x14\x00\x08\x00', 'xlsx'),  # XLSX specific
+            (b'PK\x03\x04\x14\x00\x00\x00', 'docx'),  # DOCX specific
+            (b'PK\x03\x04', 'docx'),  # Generic Office fallback
+            (b'\xFF\xD8\xFF', 'jpg'),
+            (b'\x89PNG\r\n\x1a\n', 'png'),
+            (b'GIF87a', 'gif'),
+            (b'GIF89a', 'gif')
+        ]
+    
+    def get_file_type(self, path: str) -> str:
+        """Detect file type using magic bytes with content-type fallback"""
+        try:
+            with open(path, 'rb') as f:
+                header = f.read(32)
+            
+            # Check specific signatures first
+            for sig, ftype in self.signatures:
+                if header.startswith(sig):
+                    return ftype
+                
+            # Fallback to extension
+            ext = os.path.splitext(path)[1].lower()
+            if ext:
+                return ext[1:]  # Remove dot
+            
+            return 'unknown'
+        except Exception as e:
+            logger.error(f"File type detection failed: {str(e)}")
+            return 'unknown'
+    
+    def extract_metadata(self, path: str) -> Dict[str, Any]:
+        """Extract metadata based on detected file type"""
+        file_type = self.get_file_type(path)
+        metadata = {'file_type': file_type, 'page_count': 0}
+        
+        try:
+            if file_type == 'pdf':
+                return self.extract_pdf_metadata(path) | metadata
+            elif file_type in ['docx', 'doc']:
+                return self.extract_docx_metadata(path) | metadata
+            elif file_type in ['xlsx', 'xls']:
+                return self.extract_xlsx_metadata(path) | metadata
+            elif file_type in ['pptx', 'ppt']:
+                return self.extract_pptx_metadata(path) | metadata
+            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
+                return self.extract_image_metadata(path) | metadata
+            else:
+                logger.warning(f"Unsupported file type: {file_type}")
+                return metadata
+        except Exception as e:
+            logger.error(f"Metadata extraction failed: {str(e)}")
+            return metadata
+
+    def extract_pdf_metadata(self, path: str) -> Dict[str, Any]:
+        file_obj = None
+        try:
+            file_obj = open(path, 'rb')
+            pdf_reader = PyPDF2.PdfReader(file_obj)
+            
+            metadata = pdf_reader.metadata or {}
+            first_page_text = ""
+            if len(pdf_reader.pages) > 0:
+                first_page_text = pdf_reader.pages[0].extract_text() or ""
+                first_page_text = first_page_text[:1000]
+            
+            return {
+                'title': str(metadata.get('/Title', '')).lower(),
+                'subject': str(metadata.get('/Subject', '')).lower(),
+                'keywords': str(metadata.get('/Keywords', '')).lower(),
+                'creator': str(metadata.get('/Creator', '')).lower(),
+                'producer': str(metadata.get('/Producer', '')).lower(),
+                'author': str(metadata.get('/Author', '')).lower(),
+                'first_page_sample': first_page_text.lower()[:500],
+                'page_count': len(pdf_reader.pages),
+            }
+        except Exception as e:
+            logging.error(f"PDF metadata error: {e}")
+            return {}
+        finally:
+            if file_obj:
+                file_obj.close()
+
+    def extract_docx_metadata(self, path: str) -> Dict[str, Any]:
+        try:
+            doc = docx.Document(path)
+            first_content = ""
+            for paragraph in doc.paragraphs[:5]:
+                first_content += paragraph.text + " "
+                if len(first_content) > 500:
+                    break
+            
+            core_props = doc.core_properties
+            return {
+                'title': str(core_props.title or '').lower(),
+                'subject': str(core_props.subject or '').lower(),
+                'keywords': str(core_props.keywords or '').lower(),
+                'creator': str(core_props.author or '').lower(),
+                'author': str(core_props.author or '').lower(),
+                'first_page_sample': first_content.lower()[:500],
+                'page_count': len(doc.paragraphs),
+            }
+        except Exception as e:
+            logging.error(f"DOCX metadata error: {e}")
+            return {}
+
+    def extract_xlsx_metadata(self, path: str) -> Dict[str, Any]:
+        try:
+            wb = openpyxl.load_workbook(path)
+            first_page_sample = ""
+            sheet = wb.active
+            for row in sheet.iter_rows(max_row=10, values_only=True):
+                first_page_sample += " ".join(str(cell) for cell in row if cell) + "\n"
+            
+            return {
+                'title': wb.properties.title.lower() if wb.properties.title else "",
+                'first_page_sample': first_page_sample.lower()[:500],
+                'sheet_count': len(wb.sheetnames),
+            }
+        except Exception as e:
+            logging.error(f"XLSX metadata error: {e}")
+            return {}
+
+    def extract_pptx_metadata(self, path: str) -> Dict[str, Any]:
+        try:
+            prs = Presentation(path)
+            first_page_sample = ""
+            if len(prs.slides) > 0:
+                slide = prs.slides[0]
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        for paragraph in shape.text_frame.paragraphs:
+                            for run in paragraph.runs:
+                                first_page_sample += run.text + " "
+                    elif shape.has_table:
+                        table = shape.table
+                        for row in table.rows:
+                            for cell in row.cells:
+                                if cell.text_frame:
+                                    first_page_sample += cell.text_frame.text + " | "
+            
+            return {
+                'title': prs.core_properties.title.lower() if prs.core_properties.title else "",
+                'first_page_sample': first_page_sample.lower()[:500],
+                'slide_count': len(prs.slides),
+            }
+        except Exception as e:
+            logging.error(f"PPTX metadata error: {e}")
+            return {}
+
+    def extract_image_metadata(self, path: str) -> Dict[str, Any]:
+        try:
+            img = Image.open(path)
+            return {
+                'title': "",
+                'first_page_sample': "Image content detected",
+            }
+        except Exception as e:
+            logging.error(f"Image metadata error: {e}")
+            return {}
+
 class EnhancedDocumentDownloader:
     def __init__(self):
         self.max_file_size = 1024 * 1024 * 1024  # 1 GB
@@ -46,46 +227,7 @@ class EnhancedDocumentDownloader:
         self.whitespace_pattern = re.compile(r'\s+')
         self.line_break_pattern = re.compile(r'\n\s*\n\s*\n')
             # Add document type mapping
-
-    DOCUMENT_TYPE_MAP = {
-        'motorcycle': 'motorcycle or vehicle documentation',
-        'vehicle': 'automotive documentation',
-        'engine': 'mechanical engineering documentation',
-        'automotive': 'automotive documentation',
-        'manual': 'technical manual',
-        'user guide': 'user guide',
-        'physics': 'scientific material',
-        'mathematics': 'mathematical content',
-        'scientific': 'scientific material',
-        'recipe': 'cookbook or recipe',
-        'cooking': 'culinary content',
-        'entertainment': 'entertainment content',
-        'gaming': 'gaming material',
-        'sports': 'sports-related content',
-        'fiction': 'fictional literature',
-        'novel': 'literary work',
-        'biography': 'biographical material',
-        'technical manual': 'technical documentation',
-        'owner manual': 'product manual',
-        'service manual': 'technical service manual',
-        'maintenance guide': 'technical maintenance guide',
-        'academic research': 'academic research paper',
-        'thesis': 'academic thesis',
-        'dissertation': 'academic dissertation',
-        'journal article': 'academic journal article'
-    }
-
-    def detect_document_type(self, indicators: List[str]) -> str:
-        """Detect document type based on irrelevant indicators"""
-        for indicator in indicators:
-            doc_type = self.DOCUMENT_TYPE_MAP.get(indicator)
-            if doc_type:
-                return doc_type
-        # Return generic description if no direct match
-        if indicators:
-            return f"{indicators[0]} related documentation"
-        return "non-relevant documentation"
-
+        
     def download_from_url(self, url: str) -> tuple[str, str]:
         """Download document from URL with enhanced error handling"""
         try:
@@ -99,17 +241,11 @@ class EnhancedDocumentDownloader:
             if content_length and int(content_length) > self.max_file_size:
                 raise HTTPException(status_code=413, detail=f"File too large (max {self.max_file_size // (1024 * 1024)}MB)")
 
-            content_type = response.headers.get('content-type', '').lower()
-            url_lower = url.lower()
-            if url_lower.endswith('.pdf') or 'pdf' in content_type:
-                ext, file_type = '.pdf', 'pdf'
-            elif url_lower.endswith(('.docx', '.doc')) or 'word' in content_type or 'officedocument' in content_type:
-                ext, file_type = '.docx', 'docx'
-            else:
-                ext, file_type = '.pdf', 'pdf'
-
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+            # Create temporary file with no extension
+            temp_file = tempfile.NamedTemporaryFile(delete=False)
             total_size = 0
+            
+            # Stream download content
             for chunk in response.iter_content(chunk_size=16384):
                 if chunk:
                     total_size += len(chunk)
@@ -118,8 +254,9 @@ class EnhancedDocumentDownloader:
                         os.unlink(temp_file.name)
                         raise HTTPException(status_code=413, detail=f"File too large (max {self.max_file_size // (1024 * 1024)}MB)")
                     temp_file.write(chunk)
+            
             temp_file.close()
-            return temp_file.name, file_type
+            return temp_file.name, 'unknown'  # File type will be determined later
 
         except requests.RequestException as e:
             logger.error(f"Download failed: {str(e)}")
@@ -198,6 +335,80 @@ class EnhancedDocumentDownloader:
         except Exception as e:
             logger.error(f"DOCX extraction failed: {str(e)}")
             raise HTTPException(status_code=400, detail=f"Failed to extract DOCX content: {str(e)}")
+    
+    def extract_text_from_xlsx(self, path: str) -> str:
+        """Extract text from Excel files"""
+        try:
+            wb = openpyxl.load_workbook(path)
+            text_parts = []
+            
+            for sheet_name in wb.sheetnames:
+                sheet = wb[sheet_name]
+                text_parts.append(f"\n\n--- Sheet: {sheet_name} ---\n")
+                
+                for row in sheet.iter_rows(values_only=True):
+                    row_text = [str(cell) for cell in row if cell]
+                    if row_text:
+                        text_parts.append(" | ".join(row_text))
+            
+            combined_text = "\n".join(text_parts)
+            logger.info(f"Extracted {len(combined_text)} characters from XLSX")
+            return combined_text
+        except Exception as e:
+            logger.error(f"XLSX extraction failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to extract XLSX content: {str(e)}")
+    
+    def extract_text_from_pptx(self, path: str) -> str:
+        """Extract text from PowerPoint files"""
+        try:
+            prs = Presentation(path)
+            text_parts = []
+            
+            for i, slide in enumerate(prs.slides):
+                slide_text = f"\n\n--- Slide {i+1} ---\n"
+                for shape in slide.shapes:
+                    # Handle text frames
+                    if shape.has_text_frame:
+                        for paragraph in shape.text_frame.paragraphs:
+                            for run in paragraph.runs:
+                                slide_text += run.text + " "
+                            slide_text += "\n"
+                    # Handle tables
+                    elif shape.has_table:
+                        table = shape.table
+                        for row in table.rows:
+                            row_text = []
+                            for cell in row.cells:
+                                if cell.text_frame:
+                                    row_text.append(cell.text_frame.text.strip())
+                            if any(row_text):
+                                slide_text += " | ".join(row_text) + "\n"
+                    # Handle group shapes (nested shapes)
+                    elif shape.shape_type == 6:  # MSO_SHAPE_TYPE.GROUP
+                        for sub_shape in shape.shapes:
+                            if sub_shape.has_text_frame:
+                                for paragraph in sub_shape.text_frame.paragraphs:
+                                    for run in paragraph.runs:
+                                        slide_text += run.text + " "
+                text_parts.append(slide_text)
+            
+            combined_text = "\n".join(text_parts)
+            logger.info(f"Extracted {len(combined_text)} characters from PPTX")
+            return combined_text
+        except Exception as e:
+            logger.error(f"PPTX extraction failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to extract PPTX content: {str(e)}")
+    
+    def extract_text_from_image(self, path: str) -> str:
+        """Extract text from images using OCR"""
+        try:
+            img = Image.open(path)
+            text = pytesseract.image_to_string(img)
+            logger.info(f"Extracted {len(text)} characters from image via OCR")
+            return text
+        except Exception as e:
+            logger.error(f"Image OCR failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to extract text from image: {str(e)}")
 
     def _extract_text_with_layout_awareness(self, page) -> str:
         try:
@@ -323,26 +534,20 @@ def process_document_questions(
 
     temp_path = None
     document_text = ""
-    relevance_filter = DocumentRelevanceFilter()
-    is_relevant = True
-    relevance_reason = "Relevance check bypassed for text input"
 
     try:
         # Process URL-based documents
         if request.documents.startswith(("http://", "https://")):
             downloader = EnhancedDocumentDownloader()
-            temp_path, file_type = downloader.download_from_url(request.documents)
+            temp_path, _ = downloader.download_from_url(request.documents)
             
-            # Check document relevance with detailed logging
-            logger.info(f"Checking document relevance for {file_type} file")
-            is_relevant, relevance_reason, metadata, irrelevant_indicators = relevance_filter.is_document_relevant(
-                temp_path, file_type
-            )
+            # Create metadata extractor
+            metadata_extractor = FileMetadataExtractor()
+            metadata = metadata_extractor.extract_metadata(temp_path)
+            file_type = metadata['file_type']
             
             # Log metadata for debugging
             logger.info(f"Document metadata: {metadata}")
-            logger.info(f"Relevance decision: {is_relevant} - Reason: {relevance_reason}")
-            logger.info(f"Irrelevant indicators found: {', '.join(irrelevant_indicators)}")
             
             # Extract document title or use default
             doc_name = metadata.get('title', 'the document') or "unnamed document"
@@ -351,42 +556,42 @@ def process_document_questions(
                 if '/' in request.documents:
                     doc_name = request.documents.rsplit('/', 1)[-1].split('?')[0]
             
-            threshold = relevance_filter.min_relevance_threshold
-            
-            # PAGE COUNT CHECK
+            # PAGE COUNT CHECK (keep only this)
             page_count = metadata.get('page_count', 0)
             if page_count > 450:
-                error_msg = (f"The provided document '{doc_name}' has been evaluated and found to have a "
-                    f"relevance score of {0:.2f}, which is below the configured threshold of {threshold} "
-                    f"for insurance, legal, HR, and compliance domain queries and is not suitable for processing in the current professional context.")
+                error_msg = (f"The provided document '{doc_name}' is too long ({page_count} pages). "
+                             "We currently do not support documents over 450 pages.")
                 return HackRXResponse(answers=[error_msg for _ in request.questions])
             
-            if not is_relevant:
-                # Detect document type based on irrelevant indicators
-                doc_type = downloader.detect_document_type(irrelevant_indicators)
-                logger.warning(f"Irrelevant document detected: {doc_type}")
-                
-                # Extract relevance score from reason string
-                score_match = re.search(r"Relevance score: (\d+\.\d+)", relevance_reason)
-                score = float(score_match.group(1)) if score_match else 0.0
-                
-                # Format professional rejection response
-                response_msg = (
-                    f"The provided document '{doc_name}' has been evaluated and found to have a "
-                    f"relevance score of {score:.2f}, which is below the configured threshold of {threshold} "
-                    f"for insurance, legal, HR, and compliance domain queries. This document appears to be "
-                    f"{doc_type} and is not suitable for processing in the current professional context."
-                )
-                return HackRXResponse(answers=[response_msg for _ in request.questions])
-
-            # Extract text if relevant
+            # Extract text based on detected file type
             logger.info(f"Extracting text from {file_type} document")
             if file_type == 'pdf':
                 document_text = downloader.extract_text_from_pdf_enhanced(temp_path)
-            elif file_type == 'docx':
+            elif file_type in ['docx', 'doc']:
                 document_text = downloader.extract_text_from_docx(temp_path)
+            elif file_type in ['xlsx', 'xls']:
+                document_text = downloader.extract_text_from_xlsx(temp_path)
+            elif file_type in ['pptx', 'ppt']:
+                document_text = downloader.extract_text_from_pptx(temp_path)
+            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
+                document_text = downloader.extract_text_from_image(temp_path)
+            else:
+                # Try text extraction as fallback
+                try:
+                    with open(temp_path, 'r', encoding='utf-8') as f:
+                        document_text = f.read()
+                except UnicodeDecodeError:
+                    try:
+                        with open(temp_path, 'r', encoding='latin-1') as f:
+                            document_text = f.read()
+                    except Exception as e:
+                        logger.error(f"Text extraction failed: {str(e)}")
+                        raise HTTPException(status_code=400, detail="Failed to extract text from document")
+                except Exception as e:
+                    logger.error(f"Text extraction failed: {str(e)}")
+                    raise HTTPException(status_code=400, detail="Failed to extract text from document")
         
-        # Process text-based input (skip relevance check)
+        # Process text-based input
         else:
             logger.info("Processing text input document")
             document_text = request.documents.strip()

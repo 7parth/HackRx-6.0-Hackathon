@@ -6,6 +6,10 @@ from pathlib import Path
 import docx
 import base64
 import io
+import openpyxl
+from pptx import Presentation
+import pytesseract
+from PIL import Image
 
 class DocumentRelevanceFilter:
     def __init__(self, min_relevance_threshold: float = 0.05):
@@ -125,6 +129,84 @@ class DocumentRelevanceFilter:
             logging.error(f"Error extracting DOCX metadata: {e}")
             return {}
         
+    def extract_xlsx_metadata(self, source: Union[str, bytes]) -> Dict:
+        """Extract metadata from XLSX file"""
+        try:
+            if isinstance(source, bytes):
+                wb = openpyxl.load_workbook(io.BytesIO(source))
+            else:
+                wb = openpyxl.load_workbook(source)
+            
+            first_page_sample = ""
+            sheet = wb.active
+            for row in sheet.iter_rows(max_row=10, values_only=True):
+                first_page_sample += " ".join(str(cell) for cell in row if cell) + "\n"
+            
+            return {
+                'title': wb.properties.title.lower() if wb.properties.title else "",
+                'first_page_sample': first_page_sample.lower()[:500],
+                'sheet_count': len(wb.sheetnames),
+                'file_type': 'xlsx'
+            }
+        except Exception as e:
+            logging.error(f"Error extracting XLSX metadata: {e}")
+            return {}
+        
+    def extract_image_metadata(self, source: Union[str, bytes]) -> Dict:
+        """Extract metadata from image file"""
+        try:
+            if isinstance(source, bytes):
+                img = Image.open(io.BytesIO(source))
+            else:
+                img = Image.open(source)
+                
+            return {
+                'title': "",
+                'first_page_sample': "Image content detected",
+                'file_type': 'image'
+            }
+        except Exception as e:
+            logging.error(f"Error extracting image metadata: {e}")
+            return {}
+        
+    def extract_pptx_metadata(self, source: Union[str, bytes]) -> Dict:
+        """Extract metadata from PPTX file"""
+        try:
+            if isinstance(source, bytes):
+                prs = Presentation(io.BytesIO(source))
+            else:
+                prs = Presentation(source)  # type: ignore
+                
+            first_page_sample = ""
+            if len(prs.slides) > 0:
+                slide = prs.slides[0]
+                for shape in slide.shapes:
+                    # Check if shape has text frame
+                    if shape.has_text_frame:
+                        # Extract text from all paragraphs in the text frame
+                        for paragraph in shape.text_frame.paragraphs:
+                            for run in paragraph.runs:
+                                first_page_sample += run.text + " "
+                            first_page_sample += "\n"
+                    # Handle table shapes
+                    elif shape.has_table:
+                        table = shape.table
+                        for row in table.rows:
+                            for cell in row.cells:
+                                if cell.text_frame:
+                                    first_page_sample += cell.text_frame.text + " | "
+                            first_page_sample += "\n"
+            
+            return {
+                'title': prs.core_properties.title.lower() if prs.core_properties.title else "",
+                'first_page_sample': first_page_sample.lower()[:500],
+                'slide_count': len(prs.slides),
+                'file_type': 'pptx'
+            }
+        except Exception as e:
+            logging.error(f"Error extracting PPTX metadata: {e}")
+            return {}
+        
     def calculate_relevance_score(self, metadata: Dict) -> Tuple[float, str, List[str]]:
         """Calculate relevance score with additional irrelevant indicators"""
         combined_text = ' '.join([
@@ -168,14 +250,28 @@ class DocumentRelevanceFilter:
 
     def is_document_relevant(self, source: Union[str, bytes], file_type: str) -> Tuple[bool, str, Dict, List[str]]:
         """Check document relevance with enhanced return data"""
+        file_type = file_type.lower()
         try:
             # Extract metadata based on file type
-            if file_type.lower() == 'pdf':
+            if file_type == 'pdf':
                 metadata = self.extract_pdf_metadata(source)
-            elif file_type.lower() in ['docx', 'doc']:
+            elif file_type in ['docx', 'doc']:
                 metadata = self.extract_docx_metadata(source)
+            # Add new file types
+            elif file_type in ['xlsx', 'xls']:
+                metadata = self.extract_xlsx_metadata(source)
+            elif file_type in ['pptx', 'ppt']:
+                metadata = self.extract_pptx_metadata(source)
+            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
+                metadata = self.extract_image_metadata(source)
             else:
-                return False, f"Unsupported file type: {file_type}", {}, []
+                # Try to determine file type from content
+                if file_type == 'pdf':
+                    metadata = self.extract_pdf_metadata(source)
+                elif file_type == 'docx':
+                    metadata = self.extract_docx_metadata(source)
+                else:
+                    return False, f"Unsupported file type: {file_type}", {}, []
             
             if not metadata:
                 return False, "Failed to extract metadata", {}, []
