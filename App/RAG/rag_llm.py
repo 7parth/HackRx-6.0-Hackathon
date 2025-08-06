@@ -55,10 +55,8 @@ class ProcessingResult:
 logger = logging.getLogger(__name__)
 
 class AdaptiveDocumentProcessor:
-    """Determines optimal processing parameters based on document characteristics"""
 
     def get_optimal_parameters(self, page_count: int, content_analysis: dict, text: str = "") -> dict:
-        """Dynamically determine optimal parameters with performance focus, now with semantic density"""
 
         # Base parameter selection
         if page_count <= 10:
@@ -100,7 +98,6 @@ class AdaptiveDocumentProcessor:
             semantic_density = marker_count / (word_count / 1000)
             if semantic_density > 2.5:
                 base_chunk_size = min(int(base_chunk_size * 1.2), 4000)
-        # ---------------------------------------------
 
         # Bounds for safety
         base_chunk_size = max(800, min(base_chunk_size, 4000))  # Adjusted 4000 max
@@ -124,7 +121,6 @@ class AdaptiveDocumentProcessor:
         return optimal_params
     
 class DocumentQualityAssessor:
-    """Analyzes document content characteristics for optimal processing"""
     
     def __init__(self):
         # Pre-compile regex patterns for better performance
@@ -144,7 +140,7 @@ class DocumentQualityAssessor:
         ]
     
     def analyze_content(self, text: str) -> Dict:
-        """Analyze document content characteristics with optimized regex"""
+
         if not text or len(text.strip()) < 50:
             return {
                 'avg_paragraph_length': 0,
@@ -196,8 +192,28 @@ class DocumentQualityAssessor:
             'paragraph_count': len(paragraphs)
         }
         
+    def try_load_from_url_cache(self, url: str) -> bool:
+        try:
+            if is_cached_url(url):
+                self.vector_store = load_from_cache(url, self.embeddings)
+                self.retriever = self.vector_store.as_retriever()
+                logger.info(f"[Cache] Loaded vector store from cache for URL: {url}")
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"[Cache] Failed to load from cache: {e}")
+            return False
+
+    def save_to_url_cache(self, url: str, text: str, metadata: dict):
+        try:
+            save_to_cache(url, text, metadata, self.vector_store)
+            logger.info(f"[Cache] Saved vector store for URL: {url}")
+        except Exception as e:
+            logger.warning(f"[Cache] Failed to save vector store: {e}")
+            
+            
 class EnhancedDocumentProcessor:
-    """Enhanced document processor with adaptive chunking and performance optimizations"""
+
     
     def __init__(
         self,
