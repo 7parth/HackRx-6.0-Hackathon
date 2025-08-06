@@ -11,7 +11,6 @@ from ..RAG.rag_llm import AdaptiveGeneralLLMDocumentQASystem
 import fitz
 import time
 from concurrent.futures import ThreadPoolExecutor
-from .document_relevance_filter import DocumentRelevanceFilter
 import openpyxl
 from pptx import Presentation
 import pytesseract
@@ -27,11 +26,69 @@ import openpyxl
 from pptx import Presentation
 import pytesseract
 from PIL import Image
+from collections import OrderedDict
+import hashlib
+
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(tags=["hackrx"], prefix="/api/v1")
 
+
+DOCUMENT_CACHE = OrderedDict()
+MAX_CACHE_SIZE = 50 
+DOCUMENT_CACHE = {}  # Global cache for known documents
+KNOWN_DOCUMENTS = [
+    "https://example.com/policy1.pdf",
+    "https://example.com/terms.docx",
+    # Add more known document URLs
+]
+
+
+def preload_known_documents():
+    """Pre-cache known documents at startup"""
+    downloader = EnhancedDocumentDownloader()
+    extractor = FileMetadataExtractor()
+    
+    for url in KNOWN_DOCUMENTS:
+        try:
+            logger.info(f"Pre-caching known document: {url}")
+            temp_path, _ = downloader.download_from_url(url)
+            metadata = extractor.extract_metadata(temp_path)
+            file_type = metadata['file_type']
+            
+            # Extract text based on file type
+            if file_type == 'pdf':
+                text = downloader.extract_text_from_pdf_enhanced(temp_path)
+            elif file_type in ['docx', 'doc']:
+                text = downloader.extract_text_from_docx(temp_path)
+            elif file_type in ['xlsx', 'xls']:
+                text = downloader.extract_text_from_xlsx(temp_path)
+            elif file_type in ['pptx', 'ppt']:
+                text = downloader.extract_text_from_pptx(temp_path)
+            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
+                text = downloader.extract_text_from_image(temp_path)
+            else:
+                # Fallback to text extraction
+                with open(temp_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+            
+            # Generate cache key
+            cache_key = hashlib.sha256(url.encode()).hexdigest()
+            
+            # Store in cache
+            DOCUMENT_CACHE[cache_key] = {
+                'text': text,
+                'metadata': metadata,
+                'url': url
+            }
+            
+            os.unlink(temp_path)
+            logger.info(f"Cached document: {url} ({len(text)} chars)")
+        except Exception as e:
+            logger.error(f"Failed to cache {url}: {str(e)}")
+
+# Call during module initialization
+preload_known_documents()
 
 class HackRXRequest(BaseModel):
     documents: str = Field(..., description="Document URL or plain text content")
@@ -496,7 +553,24 @@ def process_document_questions(
     ):
     start_time = time.time()
     expected_token = "Bearer a087324753b37209904afffffa5ad45b8aac7912c74f61420e7e054237778a95"
+    document_text = ""
+    metadata = {}
+    cache_key = None
+    
+    # Check if document is in cache
+    if request.documents.startswith(("http://", "https://")):
+        cache_key = hashlib.sha256(request.documents.encode()).hexdigest()
+        
+        if cache_key in DOCUMENT_CACHE:
+            logger.info(f"Using cached document: {request.documents}")
+            cached = DOCUMENT_CACHE[cache_key]
+            document_text = cached['text']
+            metadata = cached['metadata']
+            
+            # Move to end to mark as recently used (LRU)
+            DOCUMENT_CACHE.move_to_end(cache_key)
 
+    
     # Authorization check
     if authorization != expected_token:
         logger.warning("401 - Invalid authorization token received.")

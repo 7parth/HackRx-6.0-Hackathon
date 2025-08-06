@@ -9,8 +9,6 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 import logging
 import time
-
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.prompts import PromptTemplate
 from langchain_core.documents import Document as LCDocument
@@ -19,12 +17,15 @@ from langchain_community.vectorstores import FAISS
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
-
-# FIXED IMPORTS
-from langchain_community.retrievers import BM25Retriever  # Updated import
-from langchain.retrievers import EnsembleRetriever  # Keep as is
-
+from langchain_community.retrievers import BM25Retriever  
+from langchain.retrievers import EnsembleRetriever  
 from ..config import settings
+from ..Utils.cache_utils import (
+    get_cache_path,
+    is_cached_url,
+    save_to_cache,
+    load_from_cache,
+)
 
 @dataclass
 class ClauseReference:

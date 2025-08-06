@@ -31,6 +31,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+from App.routers.merge import DOCUMENT_CACHE
+
+@app.post("/cache/clear")
+def clear_cache():
+    DOCUMENT_CACHE.clear()
+    return {"status": "cache cleared"}
+
+@app.get("/cache/keys")
+def list_cache_keys():
+    return {"keys": list(DOCUMENT_CACHE.keys())}
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     logger.error(f"Validation error: {exc.errors()}")
@@ -72,6 +84,8 @@ def health_check():
             "vector_store": "operational"
         }
     }
+    
+   
 
 # Enhanced OpenAPI schema with proper security
 security = HTTPBearer()
