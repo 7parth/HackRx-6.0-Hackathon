@@ -704,6 +704,22 @@ def process_document_questions(
         llm.load_documents_from_content_adaptive(doc_data)
         
         logger.info(f"Processing {len(request.questions)} questions")
+        doc_url = request.documents.strip()
+
+        # Prepare doc_data for vectorizing
+        doc_data = [{
+            "content": document_text,
+            "filename": metadata.get("title", "document.txt") or "document.txt",
+            "doc_id": "cached_doc_1"
+        }]
+
+        # Try loading from cache
+        if llm.try_load_from_url_cache(doc_url):
+            logger.info("RAG system loaded from cache.")
+        else:
+            logger.info("Processing and caching document.")
+            llm.load_documents_from_content_adaptive(doc_data)
+            llm.save_to_url_cache(doc_url, document_text, metadata)
         answers = llm.process_questions_batch(request.questions)
 
         # Log processing time
