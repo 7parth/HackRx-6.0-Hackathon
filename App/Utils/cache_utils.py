@@ -3,7 +3,7 @@ import json
 import hashlib
 import os
 from ..Utils.downloader import DocumentDownloader
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))  # => HackRx3/
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 
 def get_url_hash(url: str) -> str:
@@ -62,3 +62,19 @@ def is_cached_file(filepath: str) -> bool:
 
 def get_cache_path_for_file(filepath: str) -> str:
     return os.path.join(CACHE_DIR, get_file_hash(filepath))
+
+def get_file_hash_from_url(url: str, downloaded_path: str = None) -> str:
+    """
+    Always use content hash if file path is available; fallback to URL hash only if file isn't accessible.
+    """
+    if downloaded_path and os.path.exists(downloaded_path):
+        try:
+            with open(downloaded_path, "rb") as f:
+                content = f.read()
+                return hashlib.sha256(content).hexdigest()
+        except Exception:
+            pass  # fallback if file can't be read
+
+    # fallback: hash the URL (non-deterministic if content changes)
+    return hashlib.sha256(url.encode("utf-8")).hexdigest()
+

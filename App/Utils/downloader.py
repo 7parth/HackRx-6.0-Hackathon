@@ -1,4 +1,5 @@
 import os
+import threading
 import requests
 import tempfile
 from fastapi import HTTPException
@@ -7,42 +8,59 @@ import tempfile
 from typing import List
 import fitz
 from concurrent.futures import ThreadPoolExecutor
-import pytesseract
-import pytesseract
 import re
 import logging
 import openpyxl
 from pptx import Presentation
 from PIL import Image
 from docx import Document as DocxDocument
+import easyocr
+_EASY_OCR_READER = None
+_EASY_OCR_LOCK = threading.Lock()
 
 logger = logging.getLogger(__name__)
 class DocumentDownloader:
     def download_from_url(self, url: str) -> tuple[str, str]:
-        """
-        Download file from URL to a temporary location. Returns (path, extension)
-        """
-        response = requests.get(url)
-        response.raise_for_status()
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0'
+            }
+            response = requests.get(url, timeout=30, stream=True, headers=headers)
+            response.raise_for_status()
 
-        content_type = response.headers.get("Content-Type", "").lower()
-        ext = ""
-        if "pdf" in content_type:
-            ext = ".pdf"
-        elif "word" in content_type:
-            ext = ".docx"
-        elif "presentationml" in content_type:
-            ext = ".pptx"
-        elif "spreadsheetml" in content_type:
-            ext = ".xlsx"
-        elif "image" in content_type:
-            ext = ".png"
+            content_length = response.headers.get('content-length')
+            if content_length and int(content_length) > self.max_file_size:
+                raise HTTPException(status_code=413, detail="File too large (1GB max)")
 
-        _, temp_path = tempfile.mkstemp(suffix=ext)
-        with open(temp_path, "wb") as f:
-            f.write(response.content)
+            # Detect extension
+            content_type = response.headers.get("Content-Type", "").lower()
+            ext = ""
+            if "pdf" in content_type:
+                ext = ".pdf"
+            elif "word" in content_type:
+                ext = ".docx"
+            elif "presentationml" in content_type:
+                ext = ".pptx"
+            elif "spreadsheetml" in content_type:
+                ext = ".xlsx"
+            elif "image" in content_type:
+                ext = ".png"
 
-        return temp_path, ext
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                for chunk in response.iter_content(chunk_size=16384):
+                    if chunk:
+                        tmp.write(chunk)
+                tmp_path = tmp.name
+
+            if os.path.getsize(tmp_path) < 1024:
+                os.unlink(tmp_path)
+                raise HTTPException(status_code=400, detail="Downloaded file appears truncated or empty")
+
+            return tmp_path, ext
+        except requests.RequestException as e:
+            logger.error(f"Download failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Failed to download document: {str(e)}")
+
     
 class EnhancedDocumentDownloader:
     def __init__(self):
@@ -228,23 +246,43 @@ class EnhancedDocumentDownloader:
             raise HTTPException(status_code=400, detail=f"Failed to extract PPTX content: {str(e)}")
     
     def extract_text_from_image(self, path: str) -> str:
-        """Robust image text extraction with error handling"""
+        """Robust image text extraction using EasyOCR"""
         try:
-            # Validate image file first
-            with Image.open(path) as img:
-                img.verify()  # Verify file integrity
+            global _EASY_OCR_READER
             
-            # Reopen for OCR processing
+            # Verify image integrity
             with Image.open(path) as img:
-                # Convert to RGB if needed (Tesseract requires RGB)
-                if img.mode not in ('RGB', 'L'):
-                    img = img.convert('RGB')
-                
-                # Use Tesseract with optimized config
-                text = pytesseract.image_to_string(
-                    img, 
-                    config='--psm 3 --oem 3 -c preserve_interword_spaces=1'
+                img.verify()
+            
+            # Initialize EasyOCR reader once (thread-safe)
+            with _EASY_OCR_LOCK:
+                if _EASY_OCR_READER is None:
+                    _EASY_OCR_READER = easyocr.Reader(['en'])  # English only
+                    
+            # Perform OCR with improved settings
+            with _EASY_OCR_LOCK:
+                result = _EASY_OCR_READER.readtext(
+                    path,
+                    detail=0,
+                    paragraph=True,  # Group text into paragraphs
+                    min_size=10,     # Minimum text size to recognize
+                    text_threshold=0.7,  # Higher confidence threshold
+                    width_ths=0.5,   # Merge closer text boxes
+                    mag_ratio=2.0    # Scale up image for better recognition
                 )
+            
+            # Combine results and clean up
+            text = "\n".join([line for line in result if line.strip()]) # type: ignore
+            
+            # ADD OCR RESULT VALIDATION
+            if len(text) < 20:
+                logger.warning(f"Image OCR returned insufficient text ({len(text)} chars)")
+                # Provide fallback context
+                return "This image contains visual content that requires analysis. Please provide specific questions about the image content."
+            
+            # Add context prefix for better processing
+            context_prefix = "Extracted text from image:\n"
+            text = context_prefix + text
             
             logger.info(f"Extracted {len(text)} characters from image via OCR")
             return text

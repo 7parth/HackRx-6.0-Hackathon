@@ -22,14 +22,10 @@ from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever  
 from ..config import settings 
 from ..Utils.cache_utils import (
-    get_cache_path,
-    is_cached_url,
-    save_to_cache,
-    load_from_cache,
-    get_file_hash, 
     CACHE_DIR,
 )
-from ..Utils.downloader import DocumentDownloader
+from ..Utils.parameter_selector import AdaptiveParameterSelector
+from App.Utils.cache_utils import get_file_hash_from_url
 
 @dataclass
 class ClauseReference:
@@ -57,74 +53,7 @@ class ProcessingResult:
 
 
 logger = logging.getLogger(__name__)
-
-class AdaptiveDocumentProcessor:
-
-    def get_optimal_parameters(self, page_count: int, content_analysis: dict, text: str = "") -> dict:
-
-        # Base parameter selection
-        if page_count <= 10:
-            base_chunk_size = 1200
-            base_overlap = 200
-            base_k = 6
-            score_threshold = 0.4
-        elif page_count <= 35:
-            base_chunk_size = 1800
-            base_overlap = 300
-            base_k = 8
-            score_threshold = 0.35
-        elif page_count <= 100:
-            base_chunk_size = 2500
-            base_overlap = 400
-            base_k = 10
-            score_threshold = 0.3
-        else:
-            base_chunk_size = 3000
-            base_overlap = 500
-            base_k = 12
-            score_threshold = 0.25
-
-        avg_paragraph_length = content_analysis.get('avg_paragraph_length', 500)
-        has_technical_content = content_analysis.get('has_technical_content', False)
-        table_density = content_analysis.get('table_density', 0)
-
-        # Quick domain-based adjustments
-        if has_technical_content and page_count > 50:
-            base_chunk_size = min(base_chunk_size * 1.1, 3500)
-        if table_density > 0.1:
-            base_chunk_size = min(base_chunk_size * 1.2, 3500)
-
-        # ------- Semantic Density Adjustment ---------
-        if text:
-            word_count = max(1, len(re.findall(r'\w+', text)))
-            marker_pattern = r'\b(?:therefore|however|consequently)\b'
-            marker_count = len(re.findall(marker_pattern, text, flags=re.IGNORECASE))
-            semantic_density = marker_count / (word_count / 1000)
-            if semantic_density > 2.5:
-                base_chunk_size = min(int(base_chunk_size * 1.2), 4000)
-
-        # Bounds for safety
-        base_chunk_size = max(800, min(base_chunk_size, 4000))  # Adjusted 4000 max
-        base_overlap = max(100, min(base_overlap, base_chunk_size // 4))
-        base_k = max(6, min(base_k, 15))
-        score_threshold = max(0.2, min(score_threshold, 0.5))
-
-        optimal_params = {
-            'chunk_size': base_chunk_size,
-            'chunk_overlap': base_overlap,
-            'retriever_k': base_k,
-            'score_threshold': score_threshold,
-            'content_characteristics': {
-                'avg_paragraph_length': avg_paragraph_length,
-                'has_technical_content': has_technical_content,
-                'table_density': table_density,
-            }
-        }
-
-        logger.info(f"Optimal parameters determined: {optimal_params}")
-        return optimal_params
-    
-    
+ 
 class DocumentQualityAssessor:
     
     def __init__(self):
@@ -202,7 +131,6 @@ class DocumentQualityAssessor:
             
 class EnhancedDocumentProcessor:
 
-    
     def __init__(
         self,
         chunk_size: int = 1000,
@@ -462,7 +390,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
         )
         
         # Initialize processors with performance focus
-        self.adaptive_processor = AdaptiveDocumentProcessor()
+        self.adaptive_processor = AdaptiveParameterSelector()
         self.quality_assessor = DocumentQualityAssessor()
         
         # Initialize with default parameters
@@ -489,45 +417,70 @@ class AdaptiveGeneralLLMDocumentQASystem:
 
         logger.info("Initialized AdaptiveGeneralLLMDocumentQASystem with performance optimizations and hybrid retrieval")
         
-    def try_load_from_url_cache(self, url):
+    def try_load_from_url_cache(self, url, downloaded_path):
         try:
-            downloader = DocumentDownloader()
-            temp_path, _ = downloader.download_from_url(url)
-            file_hash = get_file_hash(temp_path)
-            os.unlink(temp_path)
+            file_hash = get_file_hash_from_url(url, downloaded_path)
+            logger.info(f"[CACHE LOAD] Attempting to load from cache key: {file_hash}")
 
             cache_path = os.path.join(CACHE_DIR, file_hash)
-            if not os.path.exists(os.path.join(cache_path, "index")):
-                return False
+            index_path = os.path.join(cache_path, "index")
+            if not os.path.exists(index_path):
+                logger.info("[CACHE MISS] Index path not found")
+                return None
 
-            self.vector_store = FAISS.load_local(
-                os.path.join(cache_path, "index"), self.embeddings
+            self.vector_store = FAISS.load_local(index_path, self.embeddings, allow_dangerous_deserialization=True)
+            logger.info(f"[CACHE HIT] Loaded FAISS index from {index_path}")
+            
+            # Initialize retriever directly
+            self.retriever = self.vector_store.as_retriever(
+                search_type="similarity_score_threshold",
+                search_kwargs={
+                    "k": 8,  # Default value
+                    "score_threshold": 0.4  # Default value
+                }
             )
-            return True
-        except:
-            return False
 
-    def save_to_url_cache(self, url, text, metadata):
-        file_path = metadata.get("downloaded_path")
-        
-        if not file_path or not os.path.exists(file_path):
-            logger.warning(f"Missing or invalid downloaded_path in metadata: {file_path}")
-            return  # or raise an exception if needed
+            with open(os.path.join(cache_path, "text.txt"), "r", encoding="utf-8") as f:
+                cached_text = f.read()
 
-        file_hash = get_file_hash(file_path)
-        
-        cache_path = os.path.join(CACHE_DIR, file_hash)
-        os.makedirs(cache_path, exist_ok=True)
+            with open(os.path.join(cache_path, "metadata.json"), "r", encoding="utf-8") as f:
+                cached_metadata = json.load(f)
 
-        self.vector_store.save_local(os.path.join(cache_path, "index"))
+            return {
+                "vector_store": self.vector_store,
+                "text": cached_text,
+                "metadata": cached_metadata
+            }
 
-        with open(os.path.join(cache_path, "text.txt"), "w", encoding="utf-8") as f:
-            f.write(text)
+        except Exception as e:
+            logger.error(f"[CACHE ERROR] Failed to load cache: {str(e)}")
+            return None
 
-        metadata["source_url"] = url
-        with open(os.path.join(cache_path, "metadata.json"), "w", encoding="utf-8") as f:
-            json.dump(metadata, f)
+    def save_to_url_cache(self, url: str, text: str, metadata: dict):
+        try:
+            file_hash = get_file_hash_from_url(url, metadata.get("downloaded_path"))
+            cache_path = os.path.join(CACHE_DIR, file_hash)
+            os.makedirs(cache_path, exist_ok=True)
 
+            # Save FAISS index
+            if self.vector_store:
+                self.vector_store.save_local(os.path.join(cache_path, "index"))
+                logger.info(f"[CACHE SAVE] Saved FAISS index at: {os.path.join(cache_path, 'index')}")
+
+            # Save raw text
+            with open(os.path.join(cache_path, "text.txt"), "w", encoding="utf-8") as f:
+                f.write(text)
+                logger.info("[CACHE SAVE] Saved raw text")
+
+            # Save metadata
+            with open(os.path.join(cache_path, "metadata.json"), "w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2)
+                logger.info("[CACHE SAVE] Saved metadata.json")
+
+        except Exception as e:
+            logger.error(f"[CACHE ERROR] Failed to save cache: {str(e)}", exc_info=True)
+
+            
     def load_documents_from_content_adaptive(self, documents: List[Dict[str, Any]]) -> Dict:
         if not documents:
             raise ValueError("No documents provided")
@@ -582,10 +535,12 @@ class AdaptiveGeneralLLMDocumentQASystem:
 
         # Determine optimal processing parameters
         optimal_params = self.adaptive_processor.get_optimal_parameters(
-            max_pages, 
-            combined_analysis,
+            char_count=sum(len(doc.page_content) for doc in lc_documents),
+            page_count=max_pages,
+            content_analysis=combined_analysis,
             text=" ".join(doc.page_content for doc in lc_documents)
         )
+
 
         # Configure document processor with optimal parameters
         self.processor = EnhancedDocumentProcessor(
