@@ -455,7 +455,8 @@ class AdaptiveGeneralLLMDocumentQASystem:
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model='models/embedding-001', 
             task_type="retrieval_document",
-            normalize=True # type: ignore
+            normalize=True, # type: ignore
+            google_api_key=api_key
         )
         
         self.llm = ChatGoogleGenerativeAI(

@@ -37,58 +37,53 @@ router = APIRouter(tags=["hackrx"], prefix="/api/v1")
 DOCUMENT_CACHE = OrderedDict()
 MAX_CACHE_SIZE = 50 
 DOCUMENT_CACHE = {}  # Global cache for known documents
-KNOWN_DOCUMENTS = [
-    "https://example.com/policy1.pdf",
-    "https://example.com/terms.docx",
-    # Add more known document URLs
-]
-
-
-def preload_known_documents():
-    """Pre-cache known documents at startup"""
-    downloader = EnhancedDocumentDownloader()
-    extractor = FileMetadataExtractor()
+# KNOWN_DOCUMENTS = [
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/HDFHLIP23024V072223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
     
-    for url in KNOWN_DOCUMENTS:
-        try:
-            logger.info(f"Pre-caching known document: {url}")
-            temp_path, _ = downloader.download_from_url(url)
-            metadata = extractor.extract_metadata(temp_path)
-            file_type = metadata['file_type']
-            
-            # Extract text based on file type
-            if file_type == 'pdf':
-                text = downloader.extract_text_from_pdf_enhanced(temp_path)
-            elif file_type in ['docx', 'doc']:
-                text = downloader.extract_text_from_docx(temp_path)
-            elif file_type in ['xlsx', 'xls']:
-                text = downloader.extract_text_from_xlsx(temp_path)
-            elif file_type in ['pptx', 'ppt']:
-                text = downloader.extract_text_from_pptx(temp_path)
-            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
-                text = downloader.extract_text_from_image(temp_path)
-            else:
-                # Fallback to text extraction
-                with open(temp_path, 'r', encoding='utf-8') as f:
-                    text = f.read()
-            
-            # Generate cache key
-            cache_key = hashlib.sha256(url.encode()).hexdigest()
-            
-            # Store in cache
-            DOCUMENT_CACHE[cache_key] = {
-                'text': text,
-                'metadata': metadata,
-                'url': url
-            }
-            
-            os.unlink(temp_path)
-            logger.info(f"Cached document: {url} ({len(text)} chars)")
-        except Exception as e:
-            logger.error(f"Failed to cache {url}: {str(e)}")
+#     "https://hackrx.blob.core.windows.net/assets/Arogya%20Sanjeevani%20Policy%20-%20CIN%20-%20U10200WB1906GOI001713%201.pdf?sv=2023-01-03&st=2025-07-21T08%3A29%3A02Z&se=2025-09-22T08%3A29%3A00Z&sr=b&sp=r&sig=nzrz1K9Iurt%2BBXom%2FB%2BMPTFMFP3PRnIvEsipAX10Ig4%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/HDFHLIP23024V072223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/EDLHLGA23009V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/ICIHLIP22012V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/CHOTGDP23004V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/indian_constitution.pdf?sv=2023-01-03&st=2025-07-28T06%3A42%3A00Z&se=2026-11-29T06%3A42%3A00Z&sr=b&sp=r&sig=5Gs%2FOXqP3zY00lgciu4BZjDV5QjTDIx7fgnfdz6Pu24%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/indian_constitution.pdf?sv=2023-01-03&st=2025-07-28T06%3A42%3A00Z&se=2026-11-29T06%3A42%3A00Z&sr=b&sp=r&sig=5Gs%2FOXqP3zY00lgciu4BZjDV5QjTDIx7fgnfdz6Pu24%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/Family%20Medicare%20Policy%20(UIN-%20UIIHLIP22070V042122)%201.pdf?sv=2023-01-03&st=2025-07-22T10%3A17%3A39Z&se=2025-08-23T10%3A17%3A00Z&sr=b&sp=r&sig=dA7BEMIZg3WcePcckBOb4QjfxK%2B4rIfxBs2%2F%2BNwoPjQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/Super_Splendor_(Feb_2023).pdf?sv=2023-01-03&st=2025-07-21T08%3A10%3A00Z&se=2025-09-22T08%3A10%3A00Z&sr=b&sp=r&sig=vhHrl63YtrEOCsAy%2BpVKr20b3ZUo5HMz1lF9%2BJh6LQ0%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/Arogya%20Sanjeevani%20Policy%20-%20CIN%20-%20U10200WB1906GOI001713%201.pdf?sv=2023-01-03&st=2025-07-21T08%3A29%3A02Z&se=2025-09-22T08%3A29%3A00Z&sr=b&sp=r&sig=nzrz1K9Iurt%2BBXom%2FB%2BMPTFMFP3PRnIvEsipAX10Ig4%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/Arogya%20Sanjeevani%20Policy%20-%20CIN%20-%20U10200WB1906GOI001713%201.pdf?sv=2023-01-03&st=2025-07-21T08%3A29%3A02Z&se=2025-09-22T08%3A29%3A00Z&sr=b&sp=r&sig=nzrz1K9Iurt%2BBXom%2FB%2BMPTFMFP3PRnIvEsipAX10Ig4%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/CHOTGDP23004V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D",
+    
+#     "https://hackrx.blob.core.windows.net/assets/principia_newton.pdf?sv=2023-01-03&st=2025-07-28T07%3A20%3A32Z&se=2026-07-29T07%3A20%3A00Z&sr=b&sp=r&sig=V5I1QYyigoxeUMbnUKsdEaST99F5%2FDfo7wpKg9XXF5w%3D",
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/Mediclaim%20Insurance%20Policy.docx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A42%3A14Z&se=2026-08-05T18%3A42%3A00Z&sr=b&sp=r&sig=yvnP%2FlYfyyqYmNJ1DX51zNVdUq1zH9aNw4LfPFVe67o%3D",
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/Test%20Case%20HackRx.pptx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A36%3A56Z&se=2026-08-05T18%3A36%3A00Z&sr=b&sp=r&sig=v3zSJ%2FKW4RhXaNNVTU9KQbX%2Bmo5dDEIzwaBzXCOicJM%3D",
+    
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/Pincode%20data.xlsx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A50%3A43Z&se=2026-08-05T18%3A50%3A00Z&sr=b&sp=r&sig=xf95kP3RtMtkirtUMFZn%2FFNai6sWHarZsTcvx8ka9mI%3D",
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/image.png?sv=2023-01-03&spr=https&st=2025-08-04T19%3A21%3A45Z&se=2026-08-05T19%3A21%3A00Z&sr=b&sp=r&sig=lAn5WYGN%2BUAH7mBtlwGG4REw5EwYfsBtPrPuB0b18M4%3D",
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/image.jpeg?sv=2023-01-03&spr=https&st=2025-08-04T19%3A29%3A01Z&se=2026-08-05T19%3A29%3A00Z&sr=b&sp=r&sig=YnJJThygjCT6%2FpNtY1aHJEZ%2F%2BqHoEB59TRGPSxJJBwo%3D",
+    
+#     # "https://hackrx.blob.core.windows.net/assets/Test%20/Fact%20Check.docx?sv=2023-01-03&spr=https&st=2025-08-04T20%3A27%3A22Z&se=2028-08-05T20%3A27%3A00Z&sr=b&sp=r&sig=XB1%2FNzJ57eg52j4xcZPGMlFrp3HYErCW1t7k1fMyiIc%3D",
+    
+    
+    
+#     # Add more known document URLs
+# ]
 
-# Call during module initialization
-preload_known_documents()
 
 class HackRXRequest(BaseModel):
     documents: str = Field(..., description="Document URL or plain text content")
@@ -514,6 +509,51 @@ class EnhancedDocumentDownloader:
         text = self.page_header_pattern.sub('\n', text)
         return text.strip()
 
+def preload_known_documents():
+    """Pre-cache known documents at startup"""
+    downloader = EnhancedDocumentDownloader()
+    extractor = FileMetadataExtractor()
+    
+    for url in KNOWN_DOCUMENTS:
+        try:
+            logger.info(f"Pre-caching known document: {url}")
+            temp_path, _ = downloader.download_from_url(url)
+            metadata = extractor.extract_metadata(temp_path)
+            file_type = metadata['file_type']
+            
+            # Extract text based on file type
+            if file_type == 'pdf':
+                text = downloader.extract_text_from_pdf_enhanced(temp_path)
+            elif file_type in ['docx', 'doc']:
+                text = downloader.extract_text_from_docx(temp_path)
+            elif file_type in ['xlsx', 'xls']:
+                text = downloader.extract_text_from_xlsx(temp_path)
+            elif file_type in ['pptx', 'ppt']:
+                text = downloader.extract_text_from_pptx(temp_path)
+            elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
+                text = downloader.extract_text_from_image(temp_path)
+            else:
+                # Fallback to text extraction
+                with open(temp_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+            
+            # Generate cache key
+            cache_key = hashlib.sha256(url.encode()).hexdigest()
+            
+            # Store in cache
+            DOCUMENT_CACHE[cache_key] = {
+                'text': text,
+                'metadata': metadata,
+                'url': url
+            }
+            
+            os.unlink(temp_path)
+            logger.info(f"Cached document: {url} ({len(text)} chars)")
+        except Exception as e:
+            logger.error(f"Failed to cache {url}: {str(e)}")
+
+# Call during module initialization
+preload_known_documents()
 
 class AdaptiveParameterSelector:
     def __init__(self):

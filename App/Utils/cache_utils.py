@@ -32,3 +32,17 @@ def load_from_cache(url: str, embeddings):
     from langchain_community.vectorstores import FAISS
     path = os.path.join(get_cache_path(url), "index")
     return FAISS.load_local(path, embeddings)
+
+def get_file_hash(filepath: str) -> str:
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(8192):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+def is_cached_file(filepath: str) -> bool:
+    file_hash = get_file_hash(filepath)
+    return os.path.exists(os.path.join(CACHE_DIR, file_hash, "index"))
+
+def get_cache_path_for_file(filepath: str) -> str:
+    return os.path.join(CACHE_DIR, get_file_hash(filepath))
