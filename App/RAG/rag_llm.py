@@ -1,9 +1,10 @@
 import os
+import json
 import re
 import threading
 import uuid
 import numpy as np
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -19,13 +20,16 @@ from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain_community.retrievers import BM25Retriever  
 from langchain.retrievers import EnsembleRetriever  
-from ..config import settings
+from ..config import settings 
 from ..Utils.cache_utils import (
     get_cache_path,
     is_cached_url,
     save_to_cache,
     load_from_cache,
+    get_file_hash, 
+    CACHE_DIR,
 )
+from ..Utils.downloader import DocumentDownloader
 
 @dataclass
 class ClauseReference:
@@ -120,6 +124,7 @@ class AdaptiveDocumentProcessor:
         logger.info(f"Optimal parameters determined: {optimal_params}")
         return optimal_params
     
+    
 class DocumentQualityAssessor:
     
     def __init__(self):
@@ -192,24 +197,7 @@ class DocumentQualityAssessor:
             'paragraph_count': len(paragraphs)
         }
         
-    def try_load_from_url_cache(self, url: str) -> bool:
-        try:
-            if is_cached_url(url):
-                self.vector_store = load_from_cache(url, self.embeddings)
-                self.retriever = self.vector_store.as_retriever()
-                logger.info(f"[Cache] Loaded vector store from cache for URL: {url}")
-                return True
-            return False
-        except Exception as e:
-            logger.warning(f"[Cache] Failed to load from cache: {e}")
-            return False
 
-    def save_to_url_cache(self, url: str, text: str, metadata: dict):
-        try:
-            save_to_cache(url, text, metadata, self.vector_store)
-            logger.info(f"[Cache] Saved vector store for URL: {url}")
-        except Exception as e:
-            logger.warning(f"[Cache] Failed to save vector store: {e}")
             
             
 class EnhancedDocumentProcessor:
@@ -365,18 +353,22 @@ class DirectAnswerEngine:
             """
             *Role*: Expert insurance analyst. Analyze ONLY the provided policy clauses below.  
             *Core Rules*:
-            1. REFERENCE exact clause numbers (e.g., §4.2.1) for all claims
-            2. For numerical questions → SHOW CALCULATIONS
-            3. For comparisons → USE TABLES
-            4. If uncertain → STATE POSSIBLE INTERPRETATIONS
+            1. REFERENCE exact clause numbers ONLY if explicitly present (e.g., §4.2.1)
+            2. NEVER invent clauses, section numbers, or numerical values
+            3. For missing information → STATE: "The policy does not specify [exact topic]"
+            4. For numerical questions → SHOW CALCULATIONS ONLY when source data exists
+            5. For comparisons → USE TABLES ONLY when source data exists
 
             *Answer Structure*:
-            1. 🎯 *Direct Answer* (1 sentence): Key facts first
-            2. 🔍 *Critical Details* (max 3 bullet points):
-            - Limits/exceptions
-            - Requirements
-            - Coverage scope
-            3. 📑 *Verification*: List ALL referenced clauses
+            1. *Direct Answer* (1 sentence): 
+                - If information exists: Key facts first
+                - If missing: "The policy does not specify [exact topic from question]"
+            2. *Critical Details* (ONLY if information exists; max 3 bullet points):
+                - Limits/exceptions
+                - Requirements
+                - Coverage scope
+            3. *Verification* (ONLY if referenced clauses exist): 
+                - List explicit clause numbers
 
             *Policy Clauses*:
             {clauses}
@@ -384,11 +376,13 @@ class DirectAnswerEngine:
             *User Question*:
             {query}
 
-            *Response Requirements*:
-            - Natural expert tone (avoid jargon)
+            *Critical Requirements*:
+            - If ANY part of the question is unanswered in clauses, entire response must use: "The policy does not specify [exact topic]"
+            - NEVER use markdown/emojis in responses
+            - Never suggest possible interpretations for missing information
             - Max 100 words
-            - If info missing: "The policy doesn't specify [exact topic]"
-        """
+            - Example response for missing info: "The policy does not specify hospitalization expense limits"
+            """
         )
     
     def get_direct_answer(self, query: str, clauses: List[ClauseReference]) -> str:
@@ -486,7 +480,7 @@ class AdaptiveGeneralLLMDocumentQASystem:
         self._max_cache_size = 50  # Reduced cache size for memory efficiency
         
         # Index persistence
-        self._faiss_index_path = "faiss_index"
+        self._faiss_index_path = "cache"
 
         # --- FIXED: Initialize sparse retriever properly ---
         self.sparse_retriever = None  # Will be created later with documents
@@ -494,9 +488,47 @@ class AdaptiveGeneralLLMDocumentQASystem:
 
 
         logger.info("Initialized AdaptiveGeneralLLMDocumentQASystem with performance optimizations and hybrid retrieval")
+        
+    def try_load_from_url_cache(self, url):
+        try:
+            downloader = DocumentDownloader()
+            temp_path, _ = downloader.download_from_url(url)
+            file_hash = get_file_hash(temp_path)
+            os.unlink(temp_path)
+
+            cache_path = os.path.join(CACHE_DIR, file_hash)
+            if not os.path.exists(os.path.join(cache_path, "index")):
+                return False
+
+            self.vector_store = FAISS.load_local(
+                os.path.join(cache_path, "index"), self.embeddings
+            )
+            return True
+        except:
+            return False
+
+    def save_to_url_cache(self, url, text, metadata):
+        file_path = metadata.get("downloaded_path")
+        
+        if not file_path or not os.path.exists(file_path):
+            logger.warning(f"Missing or invalid downloaded_path in metadata: {file_path}")
+            return  # or raise an exception if needed
+
+        file_hash = get_file_hash(file_path)
+        
+        cache_path = os.path.join(CACHE_DIR, file_hash)
+        os.makedirs(cache_path, exist_ok=True)
+
+        self.vector_store.save_local(os.path.join(cache_path, "index"))
+
+        with open(os.path.join(cache_path, "text.txt"), "w", encoding="utf-8") as f:
+            f.write(text)
+
+        metadata["source_url"] = url
+        with open(os.path.join(cache_path, "metadata.json"), "w", encoding="utf-8") as f:
+            json.dump(metadata, f)
 
     def load_documents_from_content_adaptive(self, documents: List[Dict[str, Any]]) -> Dict:
-        """Load documents with adaptive parameters and hybrid retrieval setup"""
         if not documents:
             raise ValueError("No documents provided")
         

@@ -1,8 +1,10 @@
 import os
 import json
 import hashlib
-
-CACHE_DIR = "cache"
+import os
+from ..Utils.downloader import DocumentDownloader
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
 
 def get_url_hash(url: str) -> str:
     return hashlib.sha256(url.encode()).hexdigest()
@@ -11,7 +13,21 @@ def get_cache_path(url: str) -> str:
     return os.path.join(CACHE_DIR, get_url_hash(url))
 
 def is_cached_url(url: str) -> bool:
-    return os.path.exists(os.path.join(get_cache_path(url), "index"))
+    try:
+        # Download document temporarily
+        downloader = DocumentDownloader()
+        temp_path, _ = downloader.download_from_url(url)
+        
+        # Hash its contents
+        file_hash = get_file_hash(temp_path)
+        
+        # Clean up temp file
+        os.unlink(temp_path)
+
+        # Check if cache exists for this hash
+        return os.path.exists(os.path.join(CACHE_DIR, file_hash, "index"))
+    except Exception as e:
+        return False
 
 def save_to_cache(url: str, text: str, metadata: dict, vector_store):
     path = get_cache_path(url)

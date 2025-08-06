@@ -1,4 +1,5 @@
 import os
+import fitz
 import logging
 from App.RAG.rag_llm import AdaptiveGeneralLLMDocumentQASystem
 from App.routers.merge import EnhancedDocumentDownloader, FileMetadataExtractor
