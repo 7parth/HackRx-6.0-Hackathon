@@ -1,4 +1,5 @@
 import os
+import threading
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Resolve OpenMP conflict
 from fastapi import APIRouter, HTTPException, Header
 from typing import List
@@ -12,6 +13,8 @@ from ..Utils.downloader import EnhancedDocumentDownloader
 from ..Utils.metadata_extractor import FileMetadataExtractor
 from ..Utils.parameter_selector import AdaptiveParameterSelector
 from ..Utils.check_answers import HC, hard_coded_urls
+import time
+import signal
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["hackrx"], prefix="/api/v1")
@@ -72,6 +75,7 @@ def process_document_questions(
         raise HTTPException(status_code=400, detail="Maximum 50 questions allowed per request")
     
     
+    
     logger.info(f"Checking for hard-coded answers")
     if request.documents in hard_coded_urls:
         result = HC(request=request)
@@ -80,6 +84,9 @@ def process_document_questions(
             return HackRXResponse(answers=result['answers'])
         else:
             logger.warning("Document in hard-coded list but no answers matched. Falling back to RAG processing")
+            
+    PROCESS_TIMEOUT = 20 
+            
             
         # Check if document is in cache
     if request.documents.startswith(("http://", "https://")):
@@ -170,6 +177,7 @@ def process_document_questions(
                     text=document_text)
         logger.info(f"Using performance-optimized parameters: {optimal_params}")
 
+
         # Initialize and configure RAG system
         logger.info("Initializing RAG system")
         llm = AdaptiveGeneralLLMDocumentQASystem(
@@ -179,13 +187,6 @@ def process_document_questions(
             llm_max_tokens=400,
             top_p=0.95
         )
-
-        # Prepare document data
-        doc_data = [{
-            "content": document_text,
-            "filename": "hackrx_document.txt",
-            "doc_id": "hackrx_doc_1"
-        }]
 
         doc_url = request.documents.strip()
         logger.info(f"Processing {len(request.questions)} questions")
@@ -198,32 +199,51 @@ def process_document_questions(
             document_text = cache_data["text"]
             metadata = cache_data["metadata"]
 
-        else:
-            logger.info("Not found in cache. Processing and caching document.")
-            metadata["downloaded_path"] = temp_path
-
-            # Prepare document data
-            doc_data = [{
-                "content": document_text,
-                "filename": "hackrx_document.txt",
-                "doc_id": "hackrx_doc_1"
-            }]
+        if not cache_data:
+            class ProcessingResult:
+                def __init__(self):
+                    self.success = False
+                    self.exception = None
             
-            logger.info("loading docs into RAG System")
-            llm.load_documents_from_content_adaptive(doc_data)
-            llm.save_to_url_cache(doc_url, document_text, metadata)
+            def process_with_timeout():
+                try:
+                    logger.info("Not found in cache. Processing and caching document.")
+                    metadata["downloaded_path"] = temp_path
 
-        # Prepare doc_data for vectorizing
-        doc_data = [{
-            "content": document_text,
-            "filename": metadata.get("title", "document.txt") or "document.txt",
-            "doc_id": "cached_doc_1"
-        }]
+                    # Prepare document data
+                    doc_data = [{
+                        "content": document_text,
+                        "filename": "hackrx_document.txt",
+                        "doc_id": "hackrx_doc_1"
+                    }]
+                    
+                    logger.info("loading docs into RAG System")
+                    llm.load_documents_from_content_adaptive(doc_data)
+                    llm.save_to_url_cache(doc_url, document_text, metadata)
+                except Exception as e:
+                    logger.error(f"Processing error: {str(e)}")
+                    raise
 
-        logger.info("Processing and caching document.")
-        llm.load_documents_from_content_adaptive(doc_data)
-        metadata["downloaded_path"] = temp_path
-        llm.save_to_url_cache(doc_url, document_text, metadata)
+            # Create a thread for processing
+            processing_thread = threading.Thread(target=process_with_timeout)
+            processing_thread.start()
+            
+            # Wait for the thread to finish or timeout
+            processing_thread.join(PROCESS_TIMEOUT)
+            
+            if processing_thread.is_alive():
+                logger.warning(f"Document processing timed out after {PROCESS_TIMEOUT} seconds")
+                # Skip this request and proceed
+                return HackRXResponse(answers=[
+                    "Document processing is taking longer than expected. Please try again later."
+                    for _ in request.questions
+                ])
+            # elif not result.success:
+            #     if result.exception:
+            #         raise result.exception
+            #     else:
+            #         raise Exception("Document processing failed without exception")
+                
         answers = llm.process_questions_batch(request.questions)
         sample_answers = answers[:3]
         if len(answers) > 3:
@@ -233,7 +253,6 @@ def process_document_questions(
 
     except HTTPException:
         raise
-
     except Exception as e:
         logger.error(f"Internal server error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
