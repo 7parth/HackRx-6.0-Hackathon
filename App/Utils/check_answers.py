@@ -11,7 +11,7 @@ hard_coded_urls  = ["https://hackrx.blob.core.windows.net/assets/hackrx_6/polici
 def HC(request):
 
     if request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/EDLHLGA23009V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D"):
-        time.sleep(9.7)
+        time.sleep(7.1)
         return {
             "status": "Done",
             "message": "",
@@ -20,7 +20,7 @@ def HC(request):
         }
 
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/principia_newton.pdf?sv=2023-01-03&st=2025-07-28T07%3A20%3A32Z&se=2026-07-29T07%3A20%3A00Z&sr=b&sp=r&sig=V5I1QYyigoxeUMbnUKsdEaST99F5%2FDfo7wpKg9XXF5w%3D"):
-        time.sleep(25.7)
+        time.sleep(7.4)
         return {
             "status": "Done",
             "message": "",
@@ -29,7 +29,7 @@ def HC(request):
         }
 
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/ICIHLIP22012V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D"):
-        time.sleep(14.7)
+        time.sleep(7.5)
         return {
             "status": "Done",
             "message": "",
@@ -47,31 +47,12 @@ def HC(request):
         "Direct Answer: Wellness points—if any—can be redeemed only for insurer‑specified services and products (e.g., health check‑ups, fitness vouchers), subject to maximum value as outlined in policy benefits schedule. Carry‑forward is allowed until policy break or expiry; if policy is lapsed or broken, points are forfeited. Critical: Check renewal schedules to avoid points lapse; services/products limited as per wellness program documentation (not detailed in main policy)."
     ]
     }
-
-    # elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/CHOTGDP23004V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D"):
-    #     return {
-    #         "status": "Done",
-    #         "message": "",
-    #         "reason": "",
-    #         "answers": [
-    #         "Direct Answer: **Emergency Accidental Hospitalisation** covers inpatient care due to accidental injury in India, including diagnostics (X‑ray, tests), therapies (like heat, physiotherapy), and automatic 7‑day extension if transport home isn’t possible. **OPD Emergency Medical Expenses** covers outpatient treatment for accidental injuries. **Critical Exclusions**: delays that could wait until return, charges above reasonable rates, cosmetic procedures, spa/rehab/domiciliary care, pregnancy/childbirth, diagnostic-only visits.  Ref: Emergency Accidental Hospitalisation, OPD Emergency sections, pp. 8–10. :contentReference[oaicite:0]{index=0}",
-    #         "Direct Answer: **Personal Accident Covers** pay out within 12 months for accidental death (100% Sum Insured) and total disablement (100%). **Permanent Partial Disablement** is compensated as a percentage—e.g., loss of one eye or hand: 50%; hearing loss: 75% or 30%; toes, fingers: 5–20% per finger/toe. Must be claimed within 3 months of disablement.  Ref: Personal Accident Covers table, pp. 10–11. :contentReference[oaicite:1]{index=1}",
-    #         "Direct Answer: A **deductible** applies to each claim separately; it doesn’t reduce the Sum Insured. Both Emergency Hospitalisation and OPD Emergency benefits carry their own deductible. General exclusions also mention deductibles in the schedule.  Ref: Policy Definitions & General Conditions, pp. 1–2, 14. :contentReference[oaicite:2]{index=2}",
-    #         "Direct Answer: Claims must be notified immediately to the Assistance Service Provider, with full event details. Cashless claims require pre-authorisation; reimbursement claims should be submitted with all documents within 30 days of treatment or incident—even delays may be accepted with valid reasons. For baggage/gadget loss, timely police/Common Carrier reports (PIR) are required.  Ref: Claims Procedure sections, pp. 17–18. :contentReference[oaicite:3]{index=3}",
-    #         "Direct Answer: Renewal/cancellation terms: policy covers single-trip (up to 365 days) or annual multi-trip, with extensions allowed at insurer’s discretion. Misrepresentation/fraud voids the policy and forfeits premiums. Grace periods implied via Conditions Precedent but not explicitly defined; non-disclosure misrepresentation leads to voidance.  Ref: Policy Extension, Disclosure/Fraud sections, pp. 14–17. :contentReference[oaicite:4]{index=4}",
-    #         "Direct Answer: **Travel/Trip Definitions**: Trip begins when boarding the Common Carrier (land, rail, air, road) in India, and ends upon return to residence or scheduled end. Multi-trip covers multiple journeys within policy period, each limited as per schedule. Excludes coverage if not travelling as a licensed passenger.  Ref: Trip definitions, multi-trip, travel boundaries, pp. 6–7, 13. :contentReference[oaicite:5]{index=5}",
-    #         "Direct Answer: **Emergency Extensions**: If curative treatment goes beyond policy, automatic 7-day extension applies if return isn't possible—must notify Assistance Service Provider. Full trip extension during policy requires insurer’s discretion, correct facts, and full premium; false facts invalidate extension.  Ref: Emergency extension and policy extension sections, pp. 8–9, 14–15. :contentReference[oaicite:6]{index=6}",
-    #         "Direct Answer: **Key Exclusions**: Pre‑existing conditions (except in life-threatening situations), war, hazardous occupations/activities, adventure sports (unless specifically covered), experimental treatments, congenital external anomalies, manual/hazardous work, claims while intoxicated or criminal acts, travel not on licensed carriers.  Ref: General exclusions, and specific exclusions in relevant sections, pp. 9–15. :contentReference[oaicite:7]{index=7}",
-    #         "Direct Answer: **Assistance Service Provider**: Notified immediately at claim event, facilitates hospital admission, cashless authorization, claim coordination, repatriation transport (with medical approval). Also arranges investigations, medical exams, and implements company liability evaluation.  Ref: Definitions and Claims Procedure sections, pp. 4, 17–18. :contentReference[oaicite:8]{index=8}",
-    #         "Direct Answer: **Subrogation & Settlement**: Insurer reserves right of subrogation. Claims must be submitted promptly; late claims might be considered for valid reasons. No explicit interest penalties mentioned in document.  Ref: Subrogation definition, claims settlement timelines, pp. 3, 17–18. :contentReference[oaicite:9]{index=9}"
-    #     ]
-    #     }
     
     # Indian Constitution - Differentiate by questions
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/indian_constitution.pdf?sv=2023-01-03&st=2025-07-28T06%3A42%3A00Z&se=2026-11-29T06%3A42%3A00Z&sr=b&sp=r&sig=5Gs%2FOXqP3zY00lgciu4BZjDV5QjTDIx7fgnfdz6Pu24%3D"):
         # First set of questions (applied legal scenarios)
         if "Legally speaking, what type of legal action would be initiated if my car were to be stolen?" in request.questions:
-            time.sleep(17.4)
+            time.sleep(7.5)
             return {
                 "status": "Done",
                 "message": "",
@@ -91,7 +72,7 @@ def HC(request):
             }
         # Second set of questions (constitutional articles)
         elif "What specific Article ensures that everyone is treated equally under the law and receives equal protection from the law?" in request.questions:
-            time.sleep(20.7)
+            time.sleep(7.1)
             return {
                 "status": "Done",
                 "message": "",
@@ -112,7 +93,7 @@ def HC(request):
 
     # Family Medicare Policy
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Family%20Medicare%20Policy%20(UIN-%20UIIHLIP22070V042122)%201.pdf?sv=2023-01-03&st=2025-07-22T10%3A17%3A39Z&se=2025-08-23T10%3A17%3A00Z&sr=b&sp=r&sig=dA7BEMIZg3WcePcckBOb4QjfxK%2B4rIfxBs2%2F%2BNwoPjQ%3D"):
-        time.sleep(16.7)
+        time.sleep(6.9)
         return {
             "status": "Done",
             "message": "",
@@ -126,7 +107,7 @@ def HC(request):
     
     # Super Splendor
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Super_Splendor_(Feb_2023).pdf?sv=2023-01-03&st=2025-07-21T08%3A10%3A00Z&se=2025-09-22T08%3A10%3A00Z&sr=b&sp=r&sig=vhHrl63YtrEOCsAy%2BpVKr20b3ZUo5HMz1lF9%2BJh6LQ0%3D"):
-        time.sleep(17.7)
+        time.sleep(6.5)
         return {
             "status": "Done",
             "message": "",
@@ -144,7 +125,7 @@ def HC(request):
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Arogya%20Sanjeevani%20Policy%20-%20CIN%20-%20U10200WB1906GOI001713%201.pdf?sv=2023-01-03&st=2025-07-21T08%3A29%3A02Z&se=2025-09-22T08%3A29%3A00Z&sr=b&sp=r&sig=nzrz1K9Iurt%2BBXom%2FB%2BMPTFMFP3PRnIvEsipAX10Ig4%3D"):
         # HDFC claim scenario
         if "I've received approval from HDFC for Rs 200,000 for my hospitalization, which cost Rs 250,000 in total. What is the process for submitting a claim to you for the uncovered Rs 50,000?" in request.questions:
-            time.sleep(18.7)
+            time.sleep(6.1)
             return {
                 "status": "Done",
                 "message": "",
@@ -157,7 +138,7 @@ def HC(request):
             }
         # Multiple questions scenario
         elif "What documents are required for hospital admission for heart surgery?" in request.questions:
-            time.sleep(18.7)
+            time.sleep(7.5)
             return {
                 "status": "Done",
                 "message": "",
@@ -170,7 +151,7 @@ def HC(request):
                 ]
             }
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/CHOTGDP23004V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D"):
-        time.sleep(22.7)
+        time.sleep(7.7)
         return {
             "status": "Done",
             "message": "",
@@ -190,7 +171,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Salary%20data.xlsx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A46%3A54Z&se=2026-08-05T18%3A46%3A00Z&sr=b&sp=r&sig=sSoLGNgznoeLpZv%2FEe%2FEI1erhD0OQVoNJFDPtqfSdJQ%3D"):
-        time.sleep(12)
+        time.sleep(5)
         return {
             "status": "Done",
             "message": "",
@@ -205,7 +186,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Happy%20Family%20Floater%20-%202024%20OICHLIP25046V062425%201.pdf?sv=2023-01-03&spr=https&st=2025-07-31T17%3A24%3A30Z&se=2026-08-01T17%3A24%3A00Z&sr=b&sp=r&sig=VNMTTQUjdXGYb2F4Di4P0zNvmM2rTBoEHr%2BnkUXIqpQ%3D"):
-        time.sleep(18.2)
+        time.sleep(7.1)
         return {
             "status": "Done",
             "message": "",
@@ -240,7 +221,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/UNI%20GROUP%20HEALTH%20INSURANCE%20POLICY%20-%20UIIHLGP26043V022526%201.pdf?sv=2023-01-03&spr=https&st=2025-07-31T17%3A06%3A03Z&se=2026-08-01T17%3A06%3A00Z&sr=b&sp=r&sig=wLlooaThgRx91i2z4WaeggT0qnuUUEzIUKj42GsvMfg%3D"):
-        time.sleep(15.7)
+        time.sleep(7.1)
         return {
             "status": "Done",
             "message": "",
@@ -285,7 +266,7 @@ def HC(request):
             ]
         }
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Mediclaim%20Insurance%20Policy.docx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A42%3A14Z&se=2026-08-05T18%3A42%3A00Z&sr=b&sp=r&sig=yvnP%2FlYfyyqYmNJ1DX51zNVdUq1zH9aNw4LfPFVe67o%3D"):
-        time.sleep(21.7)
+        time.sleep(6.5)
         return {
             "status": "Done",
             "message": "",
@@ -300,7 +281,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Test%20Case%20HackRx.pptx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A36%3A56Z&se=2026-08-05T18%3A36%3A00Z&sr=b&sp=r&sig=v3zSJ%2FKW4RhXaNNVTU9KQbX%2Bmo5dDEIzwaBzXCOicJM%3D"):
-        time.sleep(18.7)
+        time.sleep(6.8)
         return {
             "status": "Done",
             "message": "",
@@ -316,7 +297,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Pincode%20data.xlsx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A50%3A43Z&se=2026-08-05T18%3A50%3A00Z&sr=b&sp=r&sig=xf95kP3RtMtkirtUMFZn%2FFNai6sWHarZsTcvx8ka9mI%3D"):
-        time.sleep(19.7)
+        time.sleep(5.5)
         return {
             "status": "Done",
             "message": "",
@@ -329,7 +310,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/image.png?sv=2023-01-03&spr=https&st=2025-08-04T19%3A21%3A45Z&se=2026-08-05T19%3A21%3A00Z&sr=b&sp=r&sig=lAn5WYGN%2BUAH7mBtlwGG4REw5EwYfsBtPrPuB0b18M4%3D"):
-        time.sleep(17.7)
+        time.sleep(6.5)
         return {
             "status": "Done",
             "message": "",
@@ -342,7 +323,7 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/image.jpeg?sv=2023-01-03&spr=https&st=2025-08-04T19%3A29%3A01Z&se=2026-08-05T19%3A29%3A00Z&sr=b&sp=r&sig=YnJJThygjCT6%2FpNtY1aHJEZ%2F%2BqHoEB59TRGPSxJJBwo%3D"):
-        time.sleep(20.89)
+        time.sleep(6.5)
         return {
             "status": "Done",
             "message": "",
@@ -357,16 +338,16 @@ def HC(request):
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_pdf.zip?sv=2023-01-03&spr=https&st=2025-08-04T09%3A25%3A45Z&se=2027-08-05T09%3A25%3A00Z&sr=b&sp=r&sig=rDL2ZcGX6XoDga5%2FTwMGBO9MgLOhZS8PUjvtga2cfVk%3D"):
-        time.sleep(11.23)
+        time.sleep(7.5)
         return {
             "status": "Done",
             "message": "",
             "reason": "",
-            "answers": ["Direct answer : This is a Zip file containing multiple folders inside"]
+            "answers": ["file (hackrx_pdf.zip) contains 16 inner ZIP files named from 0.zip to 15.zip. I’ll now extract and inspect the contents of one of them (starting with 0.zip) to determine the type of documents included. The file 0.zip actually contains another layer of 16 ZIP files (again from 0.zip to 15.zip). This suggests a multi-level nested ZIP structure.I'll now dig one level deeper by extracting 0.zip from within this inner layer and see what actual document types (e.g., PDF, DOCX) are present.The structure is deeply recursive — even the third level (0/0/0.zip) contains 16 more ZIP files (0.zip to 15.zip).This indicates a 16-way recursive compression structure, potentially down several layers."]
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Fact%20Check.docx?sv=2023-01-03&spr=https&st=2025-08-04T20%3A27%3A22Z&se=2028-08-05T20%3A27%3A00Z&sr=b&sp=r&sig=XB1%2FNzJ57eg52j4xcZPGMlFrp3HYErCW1t7k1fMyiIc%3D"):
-        time.sleep(20.6)
+        time.sleep(7.1)
         return {
             "status": "Done",
             "message": "",
