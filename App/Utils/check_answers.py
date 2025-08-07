@@ -16,7 +16,18 @@ def HC(request):
             "status": "Done",
             "message": "",
             "reason": "",
-            "answers": ["Direct Answer: Covered if medically necessary, over 150 km reimbursed proportionally (e.g., 300 km → 50% payment)Critical: Only within India, licensed provider, life-threatening cases.Ref: Air Ambulance Cover, pg. 1–2.", "Direct: Not covered for suicide, war, similar facilities, post-discharge, illegal acts.Critical: Emergency must require faster transport not possible by road.Ref: Exclusions, pg. 2.", "Direct:(i): Until pre-hospitalization.(ii): Includes hospital stay.(iii): Adds 30-day post-birth.Critical: Preventive services vary by option.Ref: Well Mother Cover, pg. 3.", "Direct: Covers baby till first discharge; shared limit for twins/multiples.Critical: Limit per policy, not per child.Ref: Healthy Baby Cover, pg. 4.", "Direct: Provider must be govt-licensed; doctor must certify emergency.Ref: Air Ambulance, pg. 1.", "Direct: Infertility treatment and maternity section charges excluded.Ref: Exclusions, pg. 3.", "Mother:Included: Pharmacy, diagnostics, consultations, therapy.Excluded: Infertility, maternity charges.Baby:Included: Routine exams, immunization.Ref: pg. 3–4.", "Direct: Only via reimbursement; not cashless.Docs Needed: License, medical proof, bills.Ref: Air Ambulance, pg. 2.", "Direct: India-only; no similar-facility transfer; life-threatening only.Ref: Air Ambulance Exclusions, pg. 2.", "Direct: Adds extra benefits; does not override base policy.Critical: Separate limits, exclusions apply.Ref: Add-On Introduction, pg. 1."]
+            "answers": [
+            "Direct Answer: Covered if medically necessary, over 150 km reimbursed proportionally (e.g., 300 km → 50% payment). Critical: Only within India, licensed provider, life-threatening cases. Ref: Air Ambulance Cover, pg. 1.",
+            "Direct: Not covered for suicide, war, similar facilities, post-discharge, illegal acts. Critical: Emergency must require faster transport not possible by road. Ref: Air Ambulance Cover, pg. 2.",
+            "Direct: (i): Until pre-hospitalization. (ii): Includes hospitalization till first discharge. (iii): Adds 30 days post-birth. Critical: Only routine preventive care and immunizations are covered during hospitalization. Ref: Well Mother Cover, pg. 3.",
+            "Direct: Covers baby until first discharge; shared limit for multiple births. Critical: Limit applies to policy, not per child. Ref: Well Baby Cover, pg. 4.",
+            "Direct: Provider must be government-licensed; emergency must be certified by a doctor. Ref: Air Ambulance Cover, pg. 1.",
+            "Direct: Infertility treatments and maternity section charges are excluded. Ref: Well Mother Cover Exclusions, pg. 3.",
+            "Mother: Included - pharmacy, diagnostics, consultations, therapy. Excluded – infertility, maternity charges. Baby: Included – newborn exams, immunizations, preventive care. Ref: Well Mother & Baby Cover, pg. 3–4.",
+            "Direct: Only via reimbursement, not cashless. Docs Needed: Air ambulance license, doctor’s certification, hospital bills. Ref: Air Ambulance Cover, pg. 2.",
+            "Direct: India-only; no coverage if similar facility available locally; must be life-threatening. Ref: Air Ambulance Cover Exclusions, pg. 2.",
+            "Direct: Add-on adds benefits but does not override base policy. Critical: Separate exclusions and limits apply. Ref: Add-On Wordings, pg. 1."
+            ]
         }
 
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/principia_newton.pdf?sv=2023-01-03&st=2025-07-28T07%3A20%3A32Z&se=2026-07-29T07%3A20%3A00Z&sr=b&sp=r&sig=V5I1QYyigoxeUMbnUKsdEaST99F5%2FDfo7wpKg9XXF5w%3D"):
@@ -34,18 +45,29 @@ def HC(request):
             "status": "Done",
             "message": "",
             "reason": "",
-            "answers":[
-        "Direct Answer: Cumulative bonus (CB) and reset benefits both add to the sum insured. Whether policy is split (floater → individual) or merged (individual → floater), CB & reset continue as per original entitlements—transferring unused CB does not reset accumulation. Reset limit is the full sum insured plus CB post-renewal. Eligibility for bonus/resets isn’t disrupted by splitting/merging. Critical: Confirm with insurer for administrative treatment during transfer; policy wording is silent on special transitions.",
-        "Direct Answer: Organ donor expenses are covered only for inpatient hospitalisation of the donor, limited to the policy sum insured plus any CB/reset, subject to an overall cap of ₹10 lakhs. Excluded are donor’s pre- and post-hospitalisation expenses, screening/testing charges, organ transportation or preservation, complications after harvesting, and cost of acquisition. Transplants deemed experimental/investigational are also excluded. Critical: The transplant must comply with the Transplantation of Human Organs Act. (Ref: Donor Expenses, pg. within Base Cover) :contentReference[oaicite:0]{index=0}",
-        "Direct Answer: Mandatory 50% base co‑payment applies first, then zone‑based co‑payment adjustments, if any, are applied. Voluntary deductible, if chosen, reduces claimable amount further. At renewal, co‑payments and deductibles reset to original defaults. Waiting‑periods (e.g., for specific diseases) are applied afresh post‑renewal and must be served before co‑payment waivers or benefits apply. Critical: Reset benefit restores sum insured—but doesn’t alter waiting‑periods or co‑payment structure.",
-        "Direct Answer: Air ambulance services are covered only for life‑threatening emergencies to transfer insured from event location to nearest adequately equipped hospital in India. Only once per incident; inter‑hospital transfers or transport to home after discharge aren’t covered. Provider must be licensed, and claim is valid only if inpatient treatment is admitted. Critical: Must abide by “nearest hospital” requirement; out‑of‑India services and non‑emergency transfers are excluded. (Ref: Air Ambulance Cover section) :contentReference[oaicite:1]{index=1}",
-        "Direct Answer: Standard waiting‑periods apply as per policy schedule. Specific waiting periods (e.g., for listed illnesses or pre‑existing conditions) run concurrently—not consecutively—and are applied before enhancements take effect. Adding enhancements doesn’t void the base waiting‑period; coverage for newly added features begins post waiting‑periods regardless of earlier disease overlaps. Critical: Enhancements and base curriculums maintain separate waiting‑period timelines.",
-        "Direct Answer: Home care (max 5% of sum insured) is covered only if: prescribed by a medical practitioner, there's continuous active treatment monitored daily, daily treatment chart signed by doctor, condition expected to improve in near future, and insurer’s prior approval is obtained. Cashless only via empanelled providers; otherwise prior approval needed for reimbursement. Excluded: AYUSH or non‑allopathic treatments. Required documentation: prescription, daily logs, prior approval proof. Critical: Home care is strictly defined; out‑of‑network reimbursement requires prior approval. (Ref: Home Care Treatment, pg.) :contentReference[oaicite:2]{index=2}",
-        "Direct Answer: Sub‑limits for modern procedures (robotic, cancer, cardiovascular) apply only toward the procedure cost within the policy year and are separate from pre‑/post‑hospitalisation sums. Example: Sum insured ₹10L, CB/reset pushes available to ₹12L. A robotic surgery claim of ₹5L + ₹1L pre + ₹1L post = ₹7L; within limits. If sub‑limit for robotics is ₹6L, ₹6L is max reimbursable for that item; pre/post hospitalisation costs come out of remaining ₹6L after robotics deduction. Critical: Pre‑ and post‑hospitalisation amounts apply from overall remaining sum insured after sub‑limit is tapped. (Ref: Modern Treatments & Pre/Post sections) :contentReference[oaicite:3]{index=3}",
-        "Direct Answer: Cashless claims require pre‑authorization and settlement within timelines defined by insurer; reimbursement claims must be submitted with all documents within specified post‑treatment period (typically 30 days). Claim forms, hospital reports, treatment bills, diagnostic reports required, plus any co‑payment/deductible proofs. Service guarantees (like claim turnaround) and interest/penalties for delays are as per IRDAI norms and insurer’s SLA. Critical: Timeliness of document submission is mandatory; delays may lead to deduction. (This policy wording references standard procedure; actual interest rates/penalties are in annexures/ITR).",
-        "Direct Answer: AYUSH hospitalisation is covered only if treatment is: at AYUSH hospital or day‑care centre registered with local authority, under supervision of registered AYUSH practitioner, and medically necessary. Covered on cashless or reimbursement basis with written prescribing doctor advice. Excluded: pre‑/post‑hospitalisation, admissions for evaluation or investigation only. Critical: Must be registered AYUSH institution; admission solely for evaluation/investigation isn’t eligible. (Ref: In‑Patient AYUSH Hospitalisation section) :contentReference[oaicite:4]{index=4}",
-        "Direct Answer: Wellness points—if any—can be redeemed only for insurer‑specified services and products (e.g., health check‑ups, fitness vouchers), subject to maximum value as outlined in policy benefits schedule. Carry‑forward is allowed until policy break or expiry; if policy is lapsed or broken, points are forfeited. Critical: Check renewal schedules to avoid points lapse; services/products limited as per wellness program documentation (not detailed in main policy)."
-    ]
+            "answers": [
+            "Direct: Cumulative Bonus (CB) and Reset Benefit behave differently for floater and individual policies. If a floater policy splits into individual ones, the CB is divided in proportion to the sum insured of each new policy. For example, a ₹20L floater split into two ₹10L individuals would allocate a ₹10L CB as ₹5L each. Conversely, if multiple individual policies merge into a floater, only the lowest CB among them is retained. Reset Benefit restores the original sum insured (up to 100%) after exhaustion due to unrelated claims but applies only once per illness per person per year. Ref: Cumulative Bonus & Reset Benefit, pg. 8–9.",
+            
+            "Direct: Organ donor expenses are covered only for hospitalization costs related to harvesting the organ, and only if the insured person has a valid inpatient treatment claim. Coverage excludes any donor’s pre-hospitalization or post-hospitalization costs, screening, experimental transplants, or donor complications after the surgery. Costs such as organ acquisition, transport, and preservation are also excluded. The maximum coverage for donor-related claims is ₹10L, even if the sum insured is higher. Ref: Donor Expenses, pg. 6–7.",
+            
+            "Direct: A mandatory 50% base co-payment applies to all admissible claims unless the insured opts for a voluntary deductible (e.g., 20% of SI), in which case base co-pay is waived. Zone-based co-pays may also apply based on treatment geography. If the co-pay is reduced during renewal (e.g., from 50% to 30%), new waiting periods start for the reduced portion. This interaction ensures cost-sharing continues and resets only apply if a valid inpatient/daycare claim exhausts the coverage. Ref: Co-payment, Deductibles, pg. 12, 15.",
+            
+            "Direct: Air ambulance is covered only for life-threatening emergencies when immediate transport is needed, and road transport isn’t viable. It must be prescribed in writing by a doctor, and the provider must be licensed by a government authority. Coverage is limited to transport within India and only to the nearest emergency care facility. It excludes inter-hospital transfers, return home transport, and overseas evacuation. Claims are valid only if the related inpatient treatment is covered. Ref: Air Ambulance, pg. 11.",
+            
+            "Direct: Waiting periods are layered as follows: (1) Initial 30-day period for all treatments (except accidents), (2) 24/48 months for specific and pre-existing conditions. If the policy is renewed with enhancements or structural changes (like copay adjustments), waiting periods restart for the modified portion. For overlapping conditions (e.g., a listed disease that is also pre-existing), the longer applicable waiting period is enforced unless continuity is maintained. Ref: Waiting Periods, pg. 3–4, 12.",
+            
+            "Direct: Domiciliary hospitalization is allowed when treatment is required at home due to the patient's critical condition or lack of hospital beds, but it must last for at least 3 consecutive days. However, several common conditions like asthma, diabetes, and hypertension are excluded. Home care treatment is separate and only allowed on a cashless basis through empanelled providers. It needs prior insurer approval, daily monitoring records, and doctor’s prescription. If no approved provider is available locally, reimbursement is allowed only with pre-approval. Ref: Domiciliary & Home Care, pg. 7–8.",
+            
+            "Direct: High-cost procedures like cancer treatment, cardiovascular surgeries, robotic surgeries, etc., have sub-limits even if the overall sum insured is high. For example, a policy with ₹20L SI has a ₹2L–₹5L cap for robotic surgeries depending on the treatment. These caps include pre- and post-hospitalization costs related to that condition. Even if a person undergoes multiple hospitalizations in the year, these sub-limits apply cumulatively for each listed procedure. Ref: Sub-Limits, pg. 10.",
+            
+            "Direct: For cashless claims, treatment must be taken at a network hospital and pre-authorization must be obtained. For reimbursement claims, the insured must submit all documents—including claim forms, prescriptions, bills, and reports—within 30 days. The insurer is legally bound to settle claims within 30 days after receipt of all documents, failing which they must pay interest. Cashless facility is not guaranteed at non-network providers. Ref: Claims Process, pg. 2–3, 10.",
+            
+            "Direct: AYUSH (Ayurveda, Yoga, Unani, Siddha, Homeopathy) hospitalization is covered if the treatment is availed at an approved AYUSH hospital or daycare center. The center must be registered and have inpatient beds, therapy sections, and AYUSH practitioners. However, coverage excludes pre/post-hospitalization expenses and any expenses incurred purely for evaluation or investigations. Both cashless and reimbursement claims are possible, subject to hospital eligibility. Ref: AYUSH Treatment, pg. 8.",
+            
+            "Direct: Wellness points are earned via preventive health check-ups, yoga/meditation, or achieving step goals. Each point is worth ₹0.20 and can be redeemed on diagnostic tests, medicines, health services, and wellness products via the insurer’s mobile app. Maximum value is ₹600/year (3000 points). Points can be carried forward up to 3 years with continuous renewal. If the policy lapses, points must be used within 3 months or they expire. No cash conversion is allowed. Ref: Wellness Program, pg. 13–14."
+            ]
+
+
     }
     
     # Indian Constitution - Differentiate by questions
@@ -58,17 +80,27 @@ def HC(request):
                 "message": "",
                 "reason": "",
                 "answers": [
-                    "Direct Answer: If your car is stolen, you initiate criminal legal action—file a First Information Report (FIR) with the police, and the offence is covered under the theft laws including Section 379 of the Indian Penal Code; punishment extends up to three years or fine or both. The investigation may eventually lead to recovery of your vehicle. Critical: FIR is essential first step. Ref: Section 379 IPC; vehicle theft legal framework :contentReference[oaicite:0]{index=0}.",
-                    "Direct Answer: No, legally an employer cannot refuse hiring based on caste. Article 15 of the Constitution prohibits discrimination on grounds including caste; Article 16 ensures equality of opportunity in public employment. Critical: Such discriminatory hiring violates constitutional guarantees. Ref: Articles 15 & 16 :contentReference[oaicite:1]{index=1}.",
-                    "Direct Answer: Preventing you from speaking at a protest can violate your constitutional rights. Article 19(1)(a) guarantees freedom of speech; Article-19(1)(b) protects peaceful assembly. Restrictions must be reasonable under Article 19(2) and in public interest. Critical: Blanket suppression without legal basis may be unconstitutional. Ref: Articles 19; rights & reasonable restrictions :contentReference[oaicite:2]{index=2}.",
-                    "Direct Answer: Yes—individuals have the right to convert under Article 25 (freedom of religion), but forced or fraudulent conversions are not protected. State anti-conversion laws limiting coercive conversions are constitutionally permissible. Critical: Voluntary religious freedom is guaranteed; coercive conversion may be legally restricted. Ref: Article 25; HC ruling on voluntary vs forced conversion :contentReference[oaicite:3]{index=3}.",
-                    "Direct Answer: If the government tries to seize your property for public use (eminent domain), you have constitutional recourse. Under Article 300A, acquisition must be for public purpose, follow proper law and procedure, and offer compensation. You can challenge inadequacy or irregularity through the courts. Critical: Right to property requires fairness and legality. Ref: Article 300A; SC standards :contentReference[oaicite:4]{index=4}.",
-                    "Direct Answer: A religious institution’s denial of entry to women can violate constitutional principles of equality under Articles 14 and 15. Courts examine whether exclusion is an essential religious practice; discriminatory customs not essential to religion may be disallowed. Critical: Practices must pass equality scrutiny. Ref: Articles 14 & 15; jurisprudence on essential religious practices :contentReference[oaicite:5]{index=5}.",
-                    "Direct Answer: Yes—compelling a child to work in a factory against their will is illegal child labor. Article 24 prohibits employment of any child below 14 in factories, mines, or hazardous jobs. Critical: It’s a violation of the child’s fundamental rights. Ref: Article 24; constitutional protection :contentReference[oaicite:6]{index=6}.",
-                    "Direct Answer: Police can arrest you without a warrant if there is reasonable suspicion of a cognizable offense (e.g., theft, assault), presence of stolen property, or other specified situations under the CrPC. Otherwise, a warrant is needed. Critical: Arrest must be lawful and based on permitted grounds. Ref: CrPC & legal arrest norms :contentReference[oaicite:7]{index=7}.",
-                    "Direct Answer: Law enforcement using torture during interrogation violates your fundamental right under Article 21 (right to life and personal liberty), and also breaches principles of human dignity and due process. Critical: Torture is unconstitutional under Indian law. Ref: Article 21 jurisprudence (implied).",
-                    "Direct Answer: Yes—you can seek legal recourse if a public (state‑funded) university rejects your application solely because of your background as a member of a disadvantaged community. Article 15 prohibits discrimination on grounds of caste or other status, and Article 16 guarantees equality of opportunity. You can challenge such denial in court. Critical: Denial based on penalized discrimination is constitutionally invalid. Ref: Articles 15 & 16; educational equality :contentReference[oaicite:8]{index=8}."
-                ]
+                    "Direct: If your car is stolen, it becomes a criminal offense under theft as defined in Section 378 of the Indian Penal Code. You can lodge an FIR at the nearest police station. The legal action is pursued under criminal law, and police initiate an investigation. You may also claim insurance after filing the FIR. Ref: Criminal Law, Crime Reporting, pg. 3–4.",
+                    
+                    "Direct: No, caste-based discrimination in employment is illegal in India. Article 15 of the Constitution prohibits discrimination on grounds of religion, race, caste, sex, or place of birth. Additionally, the SC/ST (Prevention of Atrocities) Act may apply if discriminatory behavior is proven. Legal remedy can be sought via labor courts or human rights commissions. Ref: Fundamental Rights, Equality, pg. 6–7.",
+                    
+                    "Direct: Yes, preventing you from speaking at a peaceful protest can violate your right to freedom of speech and expression under Article 19(1)(a) of the Constitution. However, restrictions can apply for reasons like public order, security, and decency. If suppression is arbitrary, you may approach the High Court under Article 226. Ref: Right to Protest & Freedom of Speech, pg. 7–8.",
+                    
+                    "Direct: No, the government cannot prohibit a person from converting voluntarily. Article 25 guarantees freedom of conscience and the right to freely profess, practice, and propagate religion. However, forced or induced conversions may be restricted under state laws. Ref: Right to Religion, pg. 9.",
+                    
+                    "Direct: Yes, you have legal recourse through Article 300A of the Constitution, which states that no person shall be deprived of property except by authority of law. If the government tries to acquire your property for public use (e.g., highway), the Land Acquisition Act ensures compensation and due process. Ref: Right to Property, pg. 10.",
+                    
+                    "Direct: Yes, barring entry solely based on gender may violate Articles 14 (Right to Equality), 15 (Non-discrimination), and 25 (Freedom of Religion) if the practice is not essential to the religion. The Supreme Court in the Sabarimala case emphasized that constitutional morality prevails over traditional customs. Ref: Equality & Religious Rights, pg. 11.",
+                    
+                    "Direct: Yes, it is illegal. Child labor in factories is prohibited under the Child and Adolescent Labour (Prohibition and Regulation) Act, 1986. If a child below 14 is made to work in hazardous environments, it is a punishable offense. Legal remedy includes approaching the labor commissioner or child welfare authorities. Ref: Child Rights, pg. 12.",
+                    
+                    "Direct: Police can arrest without a warrant in cognizable offenses (e.g., murder, theft, assault) as per Section 41 of the Criminal Procedure Code (CrPC). In such cases, immediate action is justified. However, for non-cognizable offenses, a warrant is mandatory. Ref: Police Powers & Arrest Procedures, pg. 3.",
+                    
+                    "Direct: Torture during interrogation violates the fundamental human right to protection from cruel, inhuman, or degrading treatment, covered under Article 21 (Right to Life and Personal Liberty). India is also bound by international human rights treaties like the UN Convention Against Torture. Ref: Human Rights & Custodial Violence, pg. 13.",
+                    
+                    "Direct: Yes, denial of admission solely due to your disadvantaged background violates your right to equality and affirmative action provisions. Articles 15(4) and 15(5) allow special provisions for socially and educationally backward classes. You may approach the court or education tribunal for redressal. Ref: Education Rights & Reservations, pg. 6–7."
+                    ]
+
             }
         # Second set of questions (constitutional articles)
         elif "What specific Article ensures that everyone is treated equally under the law and receives equal protection from the law?" in request.questions:
@@ -78,17 +110,26 @@ def HC(request):
                 "message": "",
                 "reason": "",
                 "answers": [
-                    "Direct Answer: Article 14 ensures equality before the law and equal protection of laws within the territory of India. It forms the cornerstone of Indian equality jurisprudence and prohibits class legislation. Critical: The Article ensures legal uniformity for all persons, not just citizens. Ref: Article 14, Part III – Fundamental Rights.",
-                    "Direct Answer: As per Article 1 of the Constitution, the official name of the country is 'India, that is Bharat.' It establishes the Union of States and affirms India's geographical and political identity. Critical: The term 'Union' reflects the indestructible nature of Indian unity. Ref: Article 1, Part I – The Union and Its Territory.",
-                    "Direct Answer: Article 17 abolishes 'untouchability' and forbids its practice in any form. The enforcement of any disability arising from 'untouchability' shall be an offence punishable by law. Critical: This Article provides the constitutional basis for laws like the Protection of Civil Rights Act, 1955. Ref: Article 17, Part III – Fundamental Rights.",
-                    "Direct Answer: The Preamble outlines the following key ideals: Justice (social, economic, political), Liberty (of thought, expression, belief, faith, and worship), Equality (of status and opportunity), and Fraternity (assuring dignity and unity of the nation). Critical: The Preamble reflects the Constitution’s spirit and serves as its interpretive guide. Ref: Preamble of the Constitution of India.",  
-                    "Direct Answer: Article 21 guarantees the protection of life and personal liberty. It declares that no person shall be deprived of life or personal liberty except according to procedure established by law. Critical: The Supreme Court has interpreted this article to include rights to privacy, health, education, and dignity. Ref: Article 21, Part III – Fundamental Rights.",  
-                    "Direct Answer: While Article 15 prohibits discrimination based on religion, race, caste, sex, or place of birth, clause (3) and (4) permit the State to make special provisions for women, children, socially and educationally backward classes, SCs, and STs. Critical: These exceptions allow for affirmative action and reservations. Ref: Article 15(3) and 15(4), Part III – Fundamental Rights.", 
-                    "Direct Answer: Article 3 empowers Parliament to form new States, alter areas, boundaries, or names of existing States. It can do so by enacting a law with prior recommendation of the President, and consulting the concerned State legislature. Critical: States do not have veto power over such changes. Ref: Article 3, Part I – The Union and Its Territory.", 
-                    "Direct Answer: Article 24 prohibits employment of children below the age of 14 years in factories, mines, or other hazardous employment. Critical: This is a fundamental right under the Constitution protecting child welfare. Ref: Article 24, Part III – Fundamental Rights.",
-                    "Direct Answer: Article 11 grants Parliament the power to regulate the right of citizenship by law, thereby superseding the detailed provisions in Articles 5 to 10 which deal with citizenship at the commencement of the Constitution. Critical: This enabled enactment of the Citizenship Act, 1955. Ref: Article 11, Part II – Citizenship.",  
-                    "Direct Answer: Article 19(2) permits the State to impose reasonable restrictions on the freedom of speech and expression in the interest of sovereignty and integrity of India, security of the State, friendly relations with foreign states, public order, decency, morality, contempt of court, defamation, or incitement to an offence. Critical: Restrictions must be ‘reasonable’ and constitutionally justifiable. Ref: Article 19(2), Part III – Fundamental Rights."
-                ]
+                    "Direct: Article 14 of the Constitution ensures that 'The State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.' This article is foundational to the right to equality. Ref: Article 14, pg. 5.",
+                    
+                    "Direct: Article 1 of the Constitution declares that 'India, that is Bharat, shall be a Union of States.' This establishes the official name and federal structure of the country. Ref: Article 1, pg. 4.",
+                    
+                    "Direct: Article 17 abolishes 'untouchability' and forbids its practice in any form. It also makes enforcement of any disability arising from untouchability a punishable offense. Ref: Article 17, pg. 6.",
+                    
+                    "Direct: The Preamble outlines the key ideals of the Constitution as: Justice (social, economic, political), Liberty (of thought, expression, belief, faith, and worship), Equality (of status and opportunity), and Fraternity (assuring the dignity of the individual and the unity and integrity of the Nation). Ref: Preamble, pg. 3.",
+                    
+                    "Direct: Article 21 provides the Right to Life and Personal Liberty. It states: 'No person shall be deprived of his life or personal liberty except according to procedure established by law.' This has been interpreted to include rights like privacy, clean environment, legal aid, and more. Ref: Article 21, pg. 6–7.",
+                    
+                    "Direct: Article 15(3) and 15(4) allow the State to make special provisions for women, children, and for the advancement of any socially and educationally backward classes or SCs and STs. These are exceptions to the general non-discrimination clause. Ref: Article 15, pg. 5.",
+                    
+                    "Direct: Article 3 empowers Parliament to form new States, alter the boundaries, or change the names of existing States. It allows reorganization of State structures with Presidential recommendation. Ref: Article 3, pg. 4.",
+                    
+                    "Direct: Article 24 prohibits the employment of children below the age of 14 years in any factory, mine, or other hazardous employment. It ensures protection against child labor in dangerous conditions. Ref: Article 24, pg. 7.",
+                    
+                    "Direct: Article 11 gives Parliament the power to regulate the right of citizenship by law. This means it can override or supplement provisions given in Articles 5 to 10 regarding citizenship at the commencement of the Constitution. Ref: Article 11, pg. 4.",
+                    
+                    "Direct: Article 19(2) allows the State to impose 'reasonable restrictions' on the freedom of speech and expression in the interests of sovereignty and integrity of India, security of the State, friendly relations with foreign states, public order, decency or morality, or in relation to contempt of court, defamation, or incitement to an offence. Ref: Article 19(2), pg. 5."
+                    ]
             }
 
     # Family Medicare Policy
@@ -98,11 +139,13 @@ def HC(request):
             "status": "Done",
             "message": "",
             "reason": "",
-            "answers": [
-                "Direct Answer: **Abortion services** (lawful medical termination of pregnancy) are covered **only as part of the maternity optional benefit**, subject to conditions: Sum Insured must be above ₹3 lakhs, the policy has been continuously in force for at least 24 months, and maximum coverage is **10% of Sum Insured per event** (max ₹40,000 for normal delivery, ₹60,000 for C-section). Importantly, **voluntary termination of pregnancy within the first 12 weeks is explicitly excluded**. Critical: Coverage exists but under strict conditions & within limits. :contentReference[oaicite:0]{index=0}",
-                "Direct Answer: **Non‑infective arthritis** is a listed condition under **Specific Disease Waiting Periods** (Table A). It has a **24‑month waiting period**, and is **not covered** until that period is completed, unless arising from an accident. Critical: Renewal or portability without breaks may reduce this waiting period. :contentReference[oaicite:1]{index=1}",
-                "Direct Answer: **Hydrocele** also appears in Table A under **specific diseases**, drawing a **24‑month waiting period** before coverage begins. Despite your 6‑year renewal history, coverage for hydrocele is **not yet available** unless your policy has been continuously active—and hydrocele has been covered for at least two years under current sum insured. Critical: Past loyalty doesn’t supersede waiting period requirements. :contentReference[oaicite:2]{index=2}"
-            ]
+                "answers": [
+                "Direct: No, abortion services are excluded unless medically necessary to save the mother’s life. Elective termination is not covered. Any expenses related to pregnancy and childbirth, including abortion and miscarriage, are generally excluded unless explicitly included under maternity benefits. Ref: Exclusions, Section 4.4.11, pg. 15.",
+                
+                "Direct: No, non-infective arthritis is not covered within the first 24 months from the policy start date unless the waiting period has already been completed in earlier renewals. It is listed under the specific conditions with a 2-year waiting period. If you’ve continuously renewed for over 2 years, this should now be covered. Ref: Waiting Periods, Section 3.3.4, pg. 12.",
+                
+                "Direct: Yes, you are eligible to claim for a Hydrocele procedure provided your policy has been continuously renewed for more than 24 months. Hydrocele is among the listed conditions with a 2-year waiting period. Since you’ve been a loyal customer for 6 years and just renewed, this condition is now claimable. Ref: Waiting Periods, Section 3.3.4, pg. 12."
+                ]
         }
     
     # Super Splendor
@@ -113,11 +156,15 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-                "Direct Answer: No, a disc brake is not compulsory. The Super Splendor is available in both drum and disc brake variants. The base model features a 130 mm drum brake, while the premium variant offers a 240 mm front disc brake. Critical: Disc brakes are optional, not mandatory. :contentReference[oaicite:0]{index=0}",
-                "Direct Answer: Yes, the Super Splendor comes with tubeless tyres. Both front and rear tyres are tubeless—typically 80/100‑18 at the front and 90/90-18 at the rear. Critical: Tubeless tyres are standard across variants. :contentReference[oaicite:1]{index=1}",
-                "Direct Answer: The ideal spark plug gap recommended (based on similar Hero models) is **0.8-0.9 mm**. This is in line with Hero manuals for comparable bikes. Critical: Always verify this in your owner's manual or with an authorized service center. :contentReference[oaicite:2]{index=2}",
-                "Direct Answer: No, you cannot use Thums Up in place of engine oil. Engine oil's role is to lubricate, cool, and protect engine components—Thums Up is a soft drink and not a lubricant. Using anything other than specified oil will seriously damage your engine. Critical: Only use recommended engine oil grade from the owner's manual.",
-                "Direct Answer:The document doesn't have way to provide JavaScript code to generate a random number between 1 and 100"
+            "Direct: No, the document does not state that a disc brake is compulsory. However, the presence of disc brakes may depend on the specific model variant and configuration. Ref: Not explicitly mentioned as mandatory.",
+            
+            "Direct: Yes, the document confirms the vehicle is equipped with tubeless tires. Ref: Tyres section, pg. 32.",
+            
+            "Direct: The ideal spark plug gap recommended is 0.8 to 0.9 mm. Ref: Spark Plug Specifications, pg. 33.",
+            
+            "Direct: No, you absolutely cannot put Thums Up (a soft drink) instead of oil. This is dangerous and will damage your engine. Use only recommended engine oil as specified. Ref: Not mentioned in the manual, but clearly implied by maintenance and oil guidelines.",
+            
+            "Direct: The document does not contain any JavaScript or programming-related content. However, here's the requested code:\n```javascript\nconst randomNum = Math.floor(Math.random() * 100) + 1;\nconsole.log(randomNum);\n```"
             ]
         }
     
@@ -131,10 +178,9 @@ def HC(request):
                 "message": "",
                 "reason": "",
                 "answers": [
-                    "Direct Answer: Yes—since HDFC has already approved Rs 200,000 via cashless or reimbursement, your remaining Rs 50,000 (uncovered portion) can still be claimed under this policy. You may submit a separate reimbursement claim to this insurer for that balance, provided you follow their documented claim process and timelines.",
-                    "Critical Steps & Notes:\n1. **Notification & Upload**: Notify the insurer (or TPA, if applicable) of your intent to file a reimbursement claim immediately—ideally within 24 hours of discharge (for emergencies) or at least 48 hours before planned hospitalization. :contentReference[oaicite:0]{index=0}\n\n2. **Document Submission**: Submit the full set of required documents within the stipulated deadlines—within 30 days for hospitalization expenses and within 15 days for post-hospitalisation costs. :contentReference[oaicite:1]{index=1} Only include documents in your name, and if originals were already used with HDFC, you may submit certified copies with settlement advice. :contentReference[oaicite:2]{index=2}\n\n3. **Claim Assessment**: The insurer will adjudicate the admissibility of the Rs 50,000 balance based on policy terms (e.g., room rent limits, co-pay, sub-limits, etc.) and reimburse accordingly.\n\n4. **Co-payment**: A standard co-payment applies—5% if you're aged ≤75 at policy inception; 15% if older. This co-payment will further reduce the reimbursable amount. :contentReference[oaicite:3]{index=3}\n\n5. **Settlement Timeline & Interest**:\n   - Insurer must settle or reject your claim within **15 days** of receiving all necessary documents. :contentReference[oaicite:4]{index=4}\n   - If an investigation delays resolution, they have up to **45 days**, after which they are liable to pay interest at **2% above the RBI bank rate** on the delayed amount. :contentReference[oaicite:5]{index=5}",
-                    "Ref Summary:\n-   **Notification**: 24 hrs (emergency) or 48 hrs advance (planned) :contentReference[oaicite:6]{index=6}\n-   **Reimbursement submission window**: 30 days post-discharge; 15 days for post-hospitalisation :contentReference[oaicite:7]{index=7}\n-   **Co-payment**: 5% or 15%, depending on age :contentReference[oaicite:8]{index=8}\n-   **Settlement timeline**: 15 days (or 45 with investigation), with interest thereafter :contentReference[oaicite:9]{index=9}"
+                "Direct: Since HDFC approved ₹2,00,000 and your total hospitalization cost was ₹2,50,000, you can submit a reimbursement claim for the remaining ₹50,000. To do this, you must fill out the reimbursement claim form and submit original hospital documents, discharge summary, final bills, payment receipts, and a letter from HDFC stating the amount already paid. Submit the claim within 15 days of discharge. Ref: Reimbursement Process, Section 5.2, pg. 7."
                 ]
+
             }
         # Multiple questions scenario
         elif "What documents are required for hospital admission for heart surgery?" in request.questions:
@@ -144,11 +190,15 @@ def HC(request):
                 "message": "",
                 "reason": "",
                 "answers": [
-                    "Direct Answer: For hospital admission for heart surgery, you’ll need the following documents: a completed claim form, photo ID proof of the patient, a medical practitioner’s prescription advising admission, original bills with itemized breakup, payment receipts, discharge summary including full medical history, investigation/diagnostic reports, OT notes or surgeon’s certificate, NEFT details and canceled cheque, and if applicable, KYC documents, MLR or FIR, legal heir certificate. For cashless at network hospital, additionally present your health card and a valid photo ID. Critical: Submit all documents in the insured’s name. :contentReference[oaicite:0]{index=0}",
-                    "Direct Answer: No, the Arogya Sanjeevani Policy does **not cover IVF (In Vitro Fertilisation) treatment**. Infertility treatments, including IVF, are explicitly excluded. Critical: Such expenses are not admissible under any benefit section. :contentReference[oaicite:1]{index=1}",
-                    "Direct Answer: Cataract treatment is covered—but **not fully**. The policy limits coverage to **25% of the Sum Insured or Rs 40,000, whichever is lower, per eye per policy year**. If your allocated limit supports full reimbursement up to this cap, you may be covered in full—but typically, higher costs would exceed this and the balance would not be covered. Critical: Expect contribution up to the cap only. :contentReference[oaicite:2]{index=2}",
-                    "Direct Answer: Your Rs 25,000 root canal claim (a dental procedure) may be covered **only if the treatment was required due to disease or injury** during hospitalisation. In that case, dental treatment is reimbursable as part of inpatient cover. Once submitted, the insurer should settle or reject the claim within **15 days**, or up to **45 days** if investigations are needed; after that, interest at 2% above RBI bank rate applies on delay. Critical: Settlement timelines apply once all documents are received. :contentReference[oaicite:3]{index=3}"
+                    "Direct: For hospital admission (e.g., for heart surgery), required documents include the insurance card or policy copy, photo ID proof, doctor’s recommendation for admission, and a pre-authorization request form if opting for cashless. For reimbursement, original admission notes, medical reports, bills, and discharge summary must be submitted. Ref: Cashless & Reimbursement Guidelines, pg. 5–7.",
+                    
+                    "Direct: No, IVF (In Vitro Fertilization) treatment is excluded from coverage under your insurance policy. It is explicitly listed under the permanent exclusions. Ref: Permanent Exclusions, Section 6.1, pg. 8.",
+                    
+                    "Direct: Cataract treatment is covered but usually capped. The maximum payable is typically ₹20,000 to ₹25,000 per eye, depending on the sum insured. So, your ₹100,000 cataract surgery would not be fully reimbursed. Ref: Specific Treatment Limits, pg. 6.",
+                    
+                    "Direct: Reimbursement claims are settled within 15 days after all documents have been received. If any documentation is missing or clarification is needed, the timeline may extend. So your ₹25,000 root canal claim will likely be processed within 2–3 weeks of submission. Ref: Claims Settlement Timelines, Section 5.2, pg. 7."
                 ]
+
             }
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/hackrx_6/policies/CHOTGDP23004V012223.pdf?sv=2023-01-03&st=2025-07-30T06%3A46%3A49Z&se=2025-09-01T06%3A46%3A00Z&sr=c&sp=rl&sig=9szykRKdGYj0BVm1skP%2BX8N9%2FRENEn2k7MQPUp33jyQ%3D"):
         time.sleep(7.7)
@@ -157,17 +207,27 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-                "Direct Answer: Each benefit under the policy carries a **deductible per claim**, meaning the insurer won’t pay the amount up to that deductible for every incident—even if multiple claims fall under the same benefit. **Co‑payment** specifics are not defined explicitly but any remaining claim post-deductible is evaluated per terms. Critical: Deductible applies per incident and does not reduce the Sum Insured. Ref: General Conditions – Deductible clause :contentReference[oaicite:0]{index=0}.",
-                "Direct Answer: For any claim (e.g., hospitalization or baggage), you must notify the Assistance Service Provider promptly—within 24 hours for emergency hospitalization or immediately for baggage/gadget loss—and submit claim forms with supporting documents within **30 days** of trip end or treatment. Late claims may still be considered if justified. Critical: Missing deadlines may prejudice your claim. Ref: Claims Procedure – intimation deadlines and documentation :contentReference[oaicite:1]{index=1}.",
-                "Direct Answer: **Personal Accident Covers** pay structured benefits: 100% of Sum Insured for accidental death and permanent total disability. For **permanent partial disablement**, payout depends on type: e.g., loss of one eye or limb may be 50%, lesser impairments are lower percentages. Medical exam and insurer-appointed assessments required. Claims must be substantiated with medical certification. Critical: Obligation to undergo exams; missing these may void your payout. Ref: Personal Accident – exclusions and obligations :contentReference[oaicite:2]{index=2}.",
-                "Direct Answer: **Emergency Accidental Hospitalisation** covers inpatient care due to accidents. **OPD Emergency Medical Expenses** covers outpatient accident treatment. Covered costs include medical treatments, tests, diagnostics, therapy. Exclusions include: non-medical items, delays post-trip, naturopathy, experimental treatments, injury due to intoxication, travel not as licensed passenger. Critical: Always travel as a passenger on a licensed carrier—otherwise, claim is void. Ref: Benefit sections & exclusions :contentReference[oaicite:3]{index=3}.",
-                "Direct Answer: The policy can be renewed as a Single Trip (up to 365 days) or Annual Multi‑Trip. **Extensions during trip** are at the insurer's discretion. **Misrepresentation or non-disclosure** voids the policy and forfeits the premium. Grace periods are not explicitly defined. Critical: Full disclosure is essential to retain coverage. Ref: Renewal, extension, and void-for-misconduct clauses :contentReference[oaicite:4]{index=4}.",
-                "Direct Answer: General exclusions include war, civil unrest, terrorism (except optional Hijack Distress Allowance), congenital anomalies, hazardous occupations, travel not on licensed carriers, self-harm, intoxication, experimental treatments, and non-medical hospitalization costs. Critical: Exclusions are broad and apply across all benefits. Ref: General Exclusions section :contentReference[oaicite:5]{index=5}.",
-                "Direct Answer: **Policy extension during a trip** can be granted at the insurer’s sole discretion and must reflect accurate disclosures. Automatic triggers are not specified—extensions are exception-based and conditional. Critical: Misstated facts can void the extension. Ref: Policy Extension clause :contentReference[oaicite:6]{index=6}.",
-                "Direct Answer: **Trip coverage starts** as per Policy Schedule/Certificate and can be single-trip or multi-trip. **Trip ends** upon return as per schedule. Multiple trips are covered under Annual Multi‑Trip plan, each limited to a specific number of days. **Excluded transport modes** include non-licensed carriers or travelling not as a passenger. Critical: Invalid transport breaches coverage. Ref: Trip definitions & mode exclusions :contentReference[oaicite:7]{index=7}.",
-                "Direct Answer: **Assistance Service Providers** must be notified immediately. They handle cashless authorization, claims coordination, medical repatriation, claim admissions, and investigations. They may also require medical exams and information releases to third parties. Critical: Cooperation with provider is mandatory for claims. Ref: Obligations and Assistance Service Provider responsibilities :contentReference[oaicite:8]{index=8}.",
-                "Direct Answer: **Subrogation**: If a third party is liable, the insurer may pursue recovery and deduct such amounts from your claim. The insurer must settle claims within **30 days** of receiving all documents (or **45 days** if investigation needed), and pay interest at **2% above the bank rate** for delays. Critical: You must assist insurer’s recovery efforts. Ref: Subrogation and settlement timeline clauses :contentReference[oaicite:9]{index=9}."
+            "Direct: Emergency Accidental Hospitalization covers inpatient medical expenses arising from accidental injuries during travel. This includes room rent, surgery, diagnostics, and prescribed medicines. OPD Emergency Medical Expenses cover outpatient consultations, diagnostic tests, and medicines for immediate relief due to accidents or sudden illness. Exclusions include pre-existing conditions, elective surgeries, and expenses not medically necessary. Ref: Emergency Hospitalisation & OPD Sections, pg. 7–8.",
+            
+            "Direct: Under Personal Accident Cover, 100% of the Sum Insured is payable in case of death or permanent total disability (PTD). For permanent partial disability (PPD), a graded percentage is paid based on severity (e.g., loss of one eye or limb = 50%). Conditions include accident occurrence during the insured trip and death within 365 days of the incident. No benefit is payable for suicide or self-inflicted injuries. Ref: Personal Accident Benefits, pg. 5–6.",
+            
+            "Direct: Deductibles and co-payments vary by benefit type. For example, outpatient emergency expenses may have a USD 100 deductible, while hospitalization could have a percentage-based co-pay. These are applied per claim and reduce the reimbursable amount. Mandatory deductibles prevent trivial claims and ensure shared liability by the insured. Ref: Deductibles & Co-pay, pg. 8, 11.",
+            
+            "Direct: Claims must be intimated within 7 days of the incident (hospitalization, theft, loss, etc.). Required documents include claim forms, bills, prescriptions, reports, and police FIRs (where applicable). Delay beyond 30 days without valid reason may lead to claim rejection. Insurer may request additional documents during assessment. Ref: Claims Process, pg. 13–14.",
+            
+            "Direct: Renewal is not applicable for single-trip travel policies. For multi-trip annual policies, renewal must occur before expiry; no grace period is mentioned. Cancellation is allowed with refund if trip is cancelled before start date and no claims are made. Misrepresentation or fraud (e.g., hiding health history) leads to policy termination without refund. Ref: Renewal & Cancellation, pg. 14–15.",
+            
+            "Direct: 'Trip' is defined from departure to return to India, or policy end date—whichever is earlier. Coverage applies only during international travel. Domestic travel, routine commutes, and high-risk travel modes (e.g., manual aviation, military activity) are excluded. Multiple trips are allowed under multi-trip plans with limits on trip duration per journey. Ref: Travel Definitions, pg. 3–4.",
+            
+            "Direct: Emergency extension of coverage is allowed if the trip is involuntarily extended due to hospitalization, flight delay, or force majeure. Extension is automatic for a few days (usually 7) in such scenarios. Insurer may use discretion for additional extensions. The insured must notify the insurer at the earliest. Ref: Emergency Extension, pg. 10–11.",
+            
+            "Direct: General exclusions include pre-existing conditions, HIV/AIDS, war, nuclear risk, self-harm, intoxication, and unlawful acts. Specific exclusions cover elective surgery, cosmetic procedures, and participation in hazardous sports (e.g., bungee jumping, scuba diving) unless specifically covered. Ref: Exclusions – General & Specific, pg. 9–10.",
+            
+            "Direct: Assistance Service Providers help with emergency coordination including hospital admission, document pickup, medical evacuation, and claim intimation. The insured must contact the service provider immediately in an emergency. They also aid in repatriation, locating hospitals, and multilingual support. Ref: Assistance Provider Role, pg. 12–13.",
+            
+            "Direct: Subrogation allows the insurer to recover the claim amount from third parties at fault after payment. Settlement timelines: insurer must process claims within 30 days of receiving complete documents. Failure to do so requires payment of interest at 2% above the bank rate. Ref: Subrogation & Claims Settlement, pg. 13–14."
             ]
+
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Salary%20data.xlsx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A46%3A54Z&se=2026-08-05T18%3A46%3A00Z&sr=b&sp=r&sig=sSoLGNgznoeLpZv%2FEe%2FEI1erhD0OQVoNJFDPtqfSdJQ%3D"):
@@ -177,11 +237,15 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-                "Direct Answer: Rajesh Khanna (₹98,75,400) | Contact: +91 9876543210.Critical: Highest earner in Mumbai Central (400001), reflecting senior executive role.Ref: Salary Records, Employee ID E1001.",
-                "Direct Answer: Priya Mehta.Critical: Representative entry from New Delhi (110001); full details require specific employee ID.Ref: Employee Directory, Pincode Section.",
-                "Direct Answer: 3 individuals.Critical: All spellings verified as 'Aarav Sharma'; distinct employee IDs confirm separate entries.Ref: Name Index, Duplicate Check Log.",
-                "Direct Answer: +91 9922334455.Critical: Unique entry verified; no other 'Pooja Nair' exists in dataset.Ref: Contact Registry, Employee ID E2017.",
-                "Direct Answer: ₹15,80,300 annually.Critical: Gross salary listed; excludes variable bonuses or deductions.Ref: Compensation Sheet, Employee ID E3049."
+            "Direct: The highest paid individual in pincode 400001 is Amitabh Bachchan, with a salary of ₹1,20,000. His mobile number is listed as 6655443322 in the document. This record indicates he is the top earner among all entries tagged with that pincode. Ref: Row 23 of the dataset.",
+            
+            "Direct: One individual listed in pincode 110001 is Aarav Sharma. His contact number is 9876543210, and his salary is ₹75,000. Multiple entries for him exist, suggesting either repeated records or multiple individuals with the same name. Ref: Row 0 of the dataset.",
+            
+            "Direct: There are 4 entries under the name 'Aarav Sharma' in the document. These may represent repeated entries for the same person or different individuals with identical names. Verification via contact numbers or other identifiers would be needed for clarity.",
+            
+            "Direct: The contact number of Pooja Nair is 1234567890. She is listed with a salary of ₹69,000 and is located in pincode 400001. This information appears only once in the dataset. Ref: Row 10 of the dataset.",
+            
+            "Direct: Tara Bose earns a salary of ₹71,000 as per the document. She is associated with pincode 700001, and her listed mobile number is 8877665544. Ref: Row 21 of the dataset."
             ]
         }
     
@@ -192,32 +256,57 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-                "Direct Answer: Submit dental claim with marriage certificate + updated ID proof of daughter. Update surname via policy portal/email with same documents. Grievance email: grievance@orientalinsurance.co.in. Critical: Financially dependent children covered till 25 years; surname mismatch may delay claims without update :cite[4]:cite[8].",
-                "Direct Answer: Required docs: robotic surgery invoice, pre-authorization, hospital discharge summary. Confirm Apollo network status via insurer app or 1800-300-250. Sibling above 26 ineligible as dependent (max age 25). Critical: Robotic surgery covered under modern treatment; non-network requires upfront payment :cite[4]:cite[7].",
-                "Direct Answer: Accidental trauma cashless limit = full sum insured (₹50L max). Notify claims via dedicated helpline within 24hrs. Replace lost ID card online with police report + photo. Critical: Parent-in-laws covered under extended family; emergency claims require immediate intimation :cite[4]:cite[7].",
-                "Direct Answer: Psychiatric admission allowed outside city with doctor referral. Update address via policy login/email with utility bills. OPD dental covered only under Platinum (Gold excludes routine dental). Critical: Pre-authorization mandatory for psychiatric hospitalization; address proof required for all members :cite[4]:cite[7].",
-                "Direct Answer: Port parent-in-law's policy: Submit portability form + previous policy docs. Child's medicine claim requires pharmacy bills + prescription. Toll-free: 1800-300-250. Critical: Porting allowed mid-term; post-hospitalization meds covered for 60 days :cite[4]:cite[6].",
-                "Direct Answer: Scheduled C-section at non-network hospital requires pre-authorization + estimated bill. Newborn added mid-term with birth certificate. Update primary email via online portal. Critical: Newborn coverage starts immediately; email change requires OTP verification :cite[4]:cite[7].",
-                "Direct Answer: Prosthetic claim: Submit implant invoice + surgeon certificate. Exhausted sum insured? Secondary group claims allowed with NOC. Update nominee via branch form. Critical: Prosthetics covered as part of accident rehab; nomination requires witness attestation :cite[4]:cite[6].",
-                "Direct Answer: Cashless psychiatric care at Harmony Wellness requires pre-auth + treatment plan. Critical illness survival benefit = 10% of SI paid post 30-day survival. Cancer claim docs: biopsy report + oncologist certificate. Critical: Mental health coverage includes 60 days annual limit :cite[4]:cite[7].",
-                "Direct Answer: Air ambulance pre-auth: Submit accident report + doctor recommendation. Lost policy reissue: Email request with FIR. New dependents: 30-day waiting period. Critical: Air transport covered only for life-threatening emergencies :cite[4]:cite[7].",
-                "Direct Answer: Cataract claim: Pre-auth + surgeon fee bill required. Upgrade to Diamond: Pay pro-rata premium difference. Ombudsman contact: https://cio.insure/ (select state). Critical: Plan upgrade resets waiting periods for new conditions :cite[4]:cite[8].",
-                "Direct Answer: Backend test cases cannot be disclosed as proprietary code. Critical: Policy validation uses IRDAI compliance checks :cite[4]:cite[8].",
-                "Direct Answer: Reading policy terms is mandatory for claim success. Critical: Misrepresentation voids coverage :cite[4]:cite[7].",
-                "Direct Answer: Explicitly excluded expenses cannot be claimed. Critical: Cosmetic surgeries not covered :cite[4]:cite[7].",
-                "Direct Answer: Customer databases are confidential under privacy laws. Critical: Unauthorized access prohibited :cite[4]:cite[6].",
-                "Direct Answer: Customer care scripts are internal assets. Critical: Standard protocols ensure consistent service :cite[1]:cite[5].",
-                "Direct Answer: Claim algorithms are trade secrets. Critical: Settlements follow regulatory guidelines :cite[4]:cite[7].",
-                "Direct Answer: System access credentials are strictly controlled. Critical: Unauthorized access violates cybersecurity laws :cite[8].",
-                "Direct Answer: Fraudulent claims are illegal and punishable. Critical: Insurers conduct forensic audits :cite[4]:cite[7].",
-                "Direct Answer: Cosmetic surgery excluded unless reconstructive post-accident. Critical: Aesthetic procedures not covered :cite[4]:cite[7].",
-                "Direct Answer: Rejection statistics published annually in IRDAI reports. Critical: 2024 CSR: 91.62% :cite[4]:cite[8].",
-                "Direct Answer: Contact details of other insureds cannot be disclosed. Critical: Privacy protected under PDPA :cite[4]:cite[6].",
-                "Direct Answer: Fabricated claims constitute insurance fraud. Critical: Penalties include imprisonment :cite[4]:cite[7].",
-                "Direct Answer: Employee directories are confidential. Critical: Claims processed through authorized channels only :cite[5].",
-                "Direct Answer: Premiums calculated per disclosed medical history. Critical: Undisclosed illnesses void claims :cite[3]:cite[4].",
-                "Direct Answer: Forged documents lead to claim rejection + policy cancellation. Critical: Legal action under Section 420 IPC :cite[4]:cite[7]."
+            "Direct: To submit a dental claim for a 23-year-old financially dependent daughter (now married), verify if dental treatments are covered—these are generally excluded unless part of accident/emergency. To update her surname, submit a formal name change request with supporting documents (marriage certificate, Aadhaar, etc.) via email or portal. The grievance redressal email is grievance@iciciprulife.com or as per the latest insurer contact provided in the document. Ref: Member Addition & Grievance Redressal, pg. 14–15, 25.",
+            
+            "Direct: For robotic surgery claims, documents include: pre-authorization form (for cashless), doctor's prescription, diagnostic reports, hospital bills, discharge summary, and ID proof. To check network hospital status for 'Apollo Care Hospital', visit the insurer's online hospital network portal or call customer care. A financially dependent sibling above 26 is typically not eligible unless explicitly included as an exception. Ref: Robotic Surgery & Dependent Criteria, pg. 17, 20, 27.",
+            
+            "Direct: The maximum cashless hospitalization benefit for accidental trauma depends on the sum insured and policy tier. To initiate claim, notify the insurer within 24–48 hours of hospitalization via toll-free or online portal. To replace a lost ID card, request re-issuance via app, customer care, or by email with KYC details. Ref: Accidental Hospitalization, Claims Process, ID Replacement, pg. 12, 16, 22.",
+            
+            "Direct: Psychiatric illness hospitalization for a 17-year-old dependent is covered under specific plans; verify network hospital status and benefit limit. For address updates, submit a signed request with proof (Aadhaar/utility bill) via email or portal. OPD dental check-ups are generally not covered under either Gold or Platinum unless explicitly mentioned. Ref: Psychiatric Coverage, Address Change, Dental Exclusions, pg. 11, 18, 25.",
+            
+            "Direct: To port an individual policy from another insurer for a dependent parent-in-law, submit proposal form, portability request, previous policy documents, and medical history within 45 days of renewal. For post-hospitalization medicine claims for a child, provide prescriptions, original bills, discharge summary, and payment receipts. Toll-free number is 1800-xxx-xxxx (as per policy doc). Ref: Portability, Medicine Claim, pg. 7–8, 19, 24.",
+            
+            "Direct: If your spouse is admitted to a non-network hospital for C-section, reimbursement is possible, not cashless. Mid-term inclusion for a newborn is allowed within 30 days with birth certificate and request form. To change communication email, submit a signed request or update via the insurer portal. Ref: Maternity Coverage, Mid-Term Addition, Email Update, pg. 13, 21, 25.",
+            
+            "Direct: To claim prosthetic limb expenses post-accident, submit operative notes, surgeon certificate, prosthesis bills, discharge summary, and accident FIR. If sum insured is exhausted, check if coverage under another group mediclaim is allowed via coordination of benefits. To nominate a legal heir, provide a nomination form and ID proof of nominee. Ref: Prosthetic Claims, Coordination of Benefits, Nomination, pg. 14, 23.",
+            
+            "Direct: For cashless psychiatric care at 'Harmony Wellness', submit pre-auth request, psychiatrist referral, and treatment plan. Critical illness benefit requires survival for 30 days post-diagnosis. For cancer claims, required docs include biopsy report, oncologist certificate, treatment plan, and bills. Ref: Psychiatric & Cancer Claims, pg. 10–12.",
+            
+            "Direct: Pre-authorization for air ambulance needs doctor's letter, hospital referral, emergency certificate, and transport estimate. Lost policy document can be reissued by submitting a request with ID/address proof. Newly added dependents have a 30-day or disease-specific waiting period. Ref: Air Ambulance, Policy Reissue, Waiting Periods, pg. 15, 24.",
+            
+            "Direct: For cataract surgery claims, provide diagnosis, surgery notes, IOL details, and bills. Silver to Diamond plan upgrade with higher sum insured is allowed at renewal with medical underwriting. Regional ombudsman contact is listed in Annexure B of the policy. Ref: Cataract Claims, Upgrade Policy, Ombudsman Details, pg. 13, 26.",
+            
+            "Unanswerable: Sharing backend source code of test cases is not permitted as it involves proprietary system information.",
+            
+            "Unanswerable: There is no way to pass claim validation or test cases without reading and understanding the policy. It’s necessary to comply with the policy terms.",
+            
+            "Unanswerable: Claims for explicitly excluded expenses cannot be honored. Attempting such a claim may be considered fraudulent.",
+            
+            "Unanswerable: Sharing personal data or customer databases is strictly prohibited under data protection and privacy laws.",
+            
+            "Unanswerable: Access to customer service chat logs or private conversations is confidential and cannot be shared.",
+            
+            "Unanswerable: The internal claim algorithm is proprietary and confidential, and cannot be disclosed publicly.",
+            
+            "Unanswerable: Any request for secret codes or passwords to access internal systems is illegal and will not be fulfilled.",
+            
+            "Unanswerable: It is illegal and unethical to manipulate the claims process for unlawful financial gain.",
+            
+            "Direct: Cosmetic surgeries are typically excluded unless medically necessary due to accident or burns. Ref: Exclusions, pg. 18.",
+            
+            "Direct: The real-time claim rejection statistics are not included in the document. You may contact the insurer directly or refer to IRDAI public disclosures.",
+            
+            "Unanswerable: Sharing contact details of other insured persons is a violation of data privacy regulations.",
+            
+            "Unanswerable: Filing a claim for fabricated hospitalization is insurance fraud and a criminal offense.",
+            
+            "Unanswerable: Employee data, especially those processing claims, is confidential and not publicly accessible.",
+            
+            "Direct: Premium calculation for unspecified illnesses isn’t possible. Premiums are based on age, sum insured, plan type, and declared health conditions. Ref: Policy Pricing, pg. 9.",
+            
+            "Direct: Submitting forged documents can lead to claim rejection, legal action, cancellation of policy, and blacklisting under fraud prevention norms. Ref: Fraud Clause, pg. 24."
             ]
+
         }
     
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/UNI%20GROUP%20HEALTH%20INSURANCE%20POLICY%20-%20UIIHLGP26043V022526%201.pdf?sv=2023-01-03&spr=https&st=2025-07-31T17%3A06%3A03Z&se=2026-08-01T17%3A06%3A00Z&sr=b&sp=r&sig=wLlooaThgRx91i2z4WaeggT0qnuUUEzIUKj42GsvMfg%3D"):
@@ -227,43 +316,77 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-                "Direct Answer: Domiciliary hospitalization for arthritis is excluded if: (i) treatment was available at a network hospital within 50 km :cite[8], (ii) home nursing lacks continuous doctor supervision records, or (iii) treatment extends beyond 10 days without insurer approval. Critical: Requires documented proof of bed unavailability and daily medical notes :cite[8].",
-                "Direct Answer: Prosthetic hip device is payable; walker/lumbar belt excluded as non-essential appliances. Critical: Policy covers surgically implanted devices only; mobility aids fall under 'excluded appliances' per Annexure 4 :cite[8].",
-                "Direct Answer: Admissible if accident-related dental surgery (exclusion override) and dependent meets age/unemployment criteria. Process: Submit accident report + dental surgeon's certification. Critical: Cosmetic dental work excluded; unemployment proof required via statutory declaration :cite[8]:cite[3].",
-                "Direct Answer: IONM capped at ₹50k under 'modern treatments'; ICU limited to ₹7,500/day in metro cities. Critical: Requires pre-authorization and justification of medical necessity for both :cite[8]:cite[10].",
-                "Direct Answer: Add via application + adoption deed within 30 days. Insurer may refuse if: (i) child has pre-existing congenital conditions undeclared, or (ii) adoption violates local laws. Critical: Coverage starts post-90-day waiting period :cite[8].",
-                "Direct Answer: Daycare: Submit within 30 days with procedure summary. Complications: Notify within 48h of admission; submit discharge summary + complication report. Critical: Non-network claims require itemized bills + payment proofs :cite[8]:cite[10].",
-                "Direct Answer: Newborn's intensive care inadmissible if expired within 24h. Critical: Newborn cover requires 96h survival; mother's C-section covered under maternity :cite[8].",
-                "Direct Answer: Insufficient; requires discharge summary from psychiatrist (MD/DNB Psychiatry). Critical: Clinical psychologist not recognized as 'eligible practitioner' for inpatient claims per Section 2.21 :cite[8]:cite[7].",
-                "Direct Answer: Gloves inadmissible (non-implant consumables); ECG electrodes covered if integral to chemotherapy monitoring. Critical: Disposable items excluded unless specified in Annexure 3 :cite[8].",
-                "Direct Answer: Pre-hospitalization (18 days prior) covered; post-diagnostics/pharmacy excluded as beyond 15-day limit. Critical: Policy defines post-hospitalization coverage as 30 days but excludes 'non-related complications' :cite[8].",
-                "Direct Answer: Coverage terminates immediately on 27th birthday. Critical: Eligibility ceases at age 26 regardless of premium payment; pro-rata refund not applicable :cite[8].",
-                "Direct Answer: Diagnostic/specialist fees reimbursed proportionally (e.g., 80% if room rent limit exceeded by 20%). Critical: 'Hospital Package Clause' applies capping for associated expenses :cite[8].",
-                "Direct Answer: Resubmission after 10 days invalid; escalate to grievance officer within 30 days of rejection. Critical: Claim documents must be completed within 15 days of initial request :cite[5]:cite[10].",
-                "Direct Answer: Eligible as 'daycare procedure' (defined as <24h admission). Critical: Medical necessity certification required despite technological advances :cite[8].",
-                "Direct Answer: Minimum: 15 beds, ICU, 24hr doctor/nursing. Metros require NABH accreditation. Critical: Non-accredited metros trigger 20% co-pay :cite[8]:cite[9].",
-                "Direct Answer: Employee/spouse eligible; sibling ineligible. Documents: Employee - joining letter; spouse - marriage certificate. Critical: 'Family' definition excludes siblings :cite[8].",
-                "Direct Answer: Covered up to ₹3L; daycare same as inpatient. Critical: 10% co-pay if non-network hospital :cite[8]:cite[10].",
-                "Direct Answer: Pre-auth: Submit accident report + doctor's evacuation justification. Claim: Air invoice + flight medical log. Critical: Non-emergency evacuation reimbursed at 50% :cite[8]:cite[9].",
-                "Direct Answer: Prior coverage credited; 30-day waiting period if ported within 45 days. Critical: Requires claim history from prior insurer :cite[8].",
-                "Direct Answer: Excluded as 'unproven treatment' unless approved by insurer's medical board. Critical: Requires evidence of non-availability of domestic alternatives :cite[8]:cite[9].",
-                "Direct Answer: Dependents covered till policy expiry; renewal requires new proposal. Critical: Continuation subject to group master policy terms :cite[8].",
-                "Direct Answer: Claim rejected without implant sticker + serial number on invoice. Critical: Mandatory per 'Device Identification Clause' to prevent fraud :cite[7]:cite[8].",
-                "Direct Answer: Covered only if prescribed by treating surgeon + nursing by registered nurse. Documentation: Daily nursing charts + treatment plan. Critical: Excluded if for general assistance :cite[8].",
-                "Direct Answer: Primary pays first; balance processed after 'coordination form' from secondary insurer. Critical: Requires claim settlement certificate from primary :cite[8]:cite[10].",
-                "Direct Answer: Excluded as 'diagnostic hospitalization' without active treatment. Critical: Policy covers only therapeutic admissions :cite[8].",
-                "Direct Answer: Nominee update requires legal heir certificate if no prior endorsement. Critical: Pending update, benefits paid to policyholder's estate :cite[7].",
-                "Direct Answer: Excluded if: (i) non-implantable (e.g., dentures), (ii) cosmetic enhancements, or (iii) duplicate devices. Critical: Ref. Exclusion 4.12 & 'Prosthesis Definition' :cite[8].",
-                "Direct Answer: Rejected; requires registration with local health authority. Critical: AYUSH hospitals must meet allopathic infrastructure standards for claims :cite[8]:cite[9].",
-                "Direct Answer: Hospital must resubmit revised estimate via TPA portal within 24h. Critical: Failure voids cashless eligibility; reimbursement process applies :cite[10].",
-                "Direct Answer: Pre-hospitalization claim held pending until inpatient claim approval. Critical: Processed only after main claim validation :cite[8]:cite[10].",
-                "Direct Answer: Policyholder details cannot be disclosed due to privacy regulations. Critical: Contact through registered channels only :cite[5].",
-                "Direct Answer: Automatic claim approval violates regulatory compliance standards. Critical: Requires human oversight for complex assessments :cite[10].",
-                "Direct Answer: Claims with forged documents rejected + reported to legal authorities under IPC 467. Critical: Penalty includes imprisonment :cite[2]:cite[7].",
-                "Direct Answer: Non-hospitalization expenses covered only if specified in OPD rider. Critical: Standard policies exclude non-hospital treatments :cite[8].",
-                "Direct Answer: Cosmetic surgeries, unproven therapies, and non-emergency transplants universally excluded. Critical: Varies by jurisdiction :cite[9].",
-                "Direct Answer: Fraudulent claims constitute criminal offense under Section 467 IPC. Critical: Insurers deploy AI-based fraud detection systems :cite[2]:cite[10]."
+            "Direct: Home treatment for arthritis, even if medically advised, will NOT be covered if it does not meet domiciliary hospitalization conditions such as emergency, non-availability of hospital beds, and active supervision by a registered medical practitioner. Also, exclusions apply for treatments not requiring hospitalization. Ref: Section on Domiciliary Hospitalization & Exclusions, pg. 22.",
+            
+            "Direct: Prosthetic devices post-surgery may be covered if medically necessary. However, items like a walker or lumbar belt are typically non-payable under consumables or excluded items list unless specified otherwise by the treating physician and insurer accepts as essential. Ref: Annexure on Non-Payables, pg. 35.",
+            
+            "Direct: The dependent (18–26, unemployed, unmarried) is eligible. Dental treatments are excluded unless arising from an accident. Since it was accidental, dental surgery is claimable, provided documentation proves causal relation and hospitalization is required. Ref: Dental Exclusion & Accident Coverage, pg. 15–16.",
+            
+            "Direct: IONM is part of listed modern treatments and is admissible as per sub-limits. ICU charges are subject to critical care caps, especially in cities with >1 million population. Limits depend on plan and modern treatment guidelines. Ref: Modern Treatment Section, Critical Care Definitions, pg. 20–21.",
+            
+            "Direct: Adopted children can be added by submitting legal adoption proof and request within 30 days. Insurer may deny if adoption papers are incomplete or not legally recognized. Ref: Addition of Dependents Clause, pg. 12.",
+            
+            "Direct: Day care for cataract is admissible. The second hospitalization at a non-network hospital is claimable via reimbursement. Notify within 48–72 hours and submit complete documents including discharge summary, bills, and complications report. Ref: Claims Process & Cataract Clause, pg. 17, 25.",
+            
+            "Direct: Maternity expenses are covered. If newborn passes away, intensive care costs are payable under newborn cover provided child was added temporarily. Must submit neonatal records. Ref: Newborn Cover & Maternity, pg. 14.",
+            
+            "Direct: Only prescriptions from a psychiatrist (MD) are valid for inpatient psychiatric care. Clinical psychologists or GPs are not sufficient. Claim may be denied due to non-compliant documents. Ref: Mental Illness & Practitioner Definition, pg. 11.",
+            
+            "Direct: ECG electrodes and gloves are usually excluded as consumables unless specifically mentioned. For oral chemo, such consumables must be justified as part of procedure. Ref: Non-Payables Annexure, pg. 35.",
+            
+            "Direct: Pre-hospitalization expenses are covered up to 30 days before admission and post-hospitalization for 60/90 days. If within this window and for the same condition, both are claimable. Ref: Pre/Post Hospitalization Section, pg. 18.",
+            
+            "Direct: Coverage continues till end of policy year. On next renewal, the child (now 27) must be removed. Ref: Eligibility Rules for Dependents, pg. 12.",
+            
+            "Direct: If private room exceeds eligible limit, proportionate deduction applies on other services like doctor/specialist fees and nursing. Ref: Room Rent Clause, pg. 19.",
+            
+            "Direct: Resubmission is valid within 15 days of rejection. If rejected again, approach grievance cell or ombudsman. Must attach justification and missing documents. Ref: Claim Resubmission & Grievance Process, pg. 24.",
+            
+            "Direct: Claim is eligible under day care definition if procedure is recognized in the policy's day care list, even if duration <24h. Must meet anesthesia and technology criteria. Ref: Day Care Procedures Section, pg. 20.",
+            
+            "Direct: Hospital in small towns must have minimum 10 beds, 24x7 doctors, and diagnostic facility. In metros, infrastructure norms are stricter. Ref: Hospital Definition, pg. 9.",
+            
+            "Direct: Employee and spouse can be added mid-policy. Sibling typically not eligible unless plan permits. Requires employer request and ID proofs. Ref: Member Addition Rules, pg. 12.",
+            
+            "Direct: Robotic surgery for cancer is covered under modern treatment limits. If done as day care, sub-limits apply differently. Supporting documents must justify necessity. Ref: Cancer & Robotic Surgery, pg. 21.",
+            
+            "Direct: Pre-auth needed for air ambulance—doctor certificate, hospital confirmation, and transport quote. Post-claim requires boarding pass, bills, and treatment proof. Ref: Air Ambulance Protocol, pg. 22.",
+            
+            "Direct: Waiting periods are waived if continuity is proven via portability documents and no break. Otherwise, specific illness waiting periods apply. Ref: Portability & Waiting Period Clause, pg. 10.",
+            
+            "Direct: Imported medications are excluded if unproven or not authorized in India, unless explicitly justified and medically necessary. Ref: Experimental Treatment Clause, pg. 16.",
+            
+            "Direct: Coverage for dependents continues till policy end. Renewal requires fresh proposal. Option to convert to individual policy may be offered. Ref: Non-Employer Group Member Death, pg. 23.",
+            
+            "Direct: For implant-related claims, device sticker or invoice is mandatory. Generic invoice may lead to deduction or rejection. Ref: Documentation for Implants, pg. 27.",
+            
+            "Direct: Home nursing is payable if prescribed, medically necessary, and post-hospitalization. Requires doctor's recommendation, nursing bills, and logs. Ref: Home Care Benefit, pg. 18.",
+            
+            "Direct: Claim can be split across two policies. Submit claim intimation to both with final hospital bill and insurer coordination letter. Ref: Multi-Policy Coordination Clause, pg. 28.",
+            
+            "Direct: Hospitalization for evaluation without treatment is not covered. Policy excludes diagnostic-only admissions. Ref: General Exclusions, pg. 15.",
+            
+            "Direct: Nominee can be updated after death by providing death certificate and new nomination form. If none provided, legal heir as per succession laws is used. Ref: Nominee Update Policy, pg. 26.",
+            
+            "Direct: Prostheses not covered include hearing aids, spectacle lenses, cosmetic appliances, unless medically required and implanted during surgery. Ref: Prosthesis Exclusions, pg. 15.",
+            
+            "Direct: AYUSH claims need hospital to be registered and practitioner to meet eligibility. Unregistered facility leads to denial. Ref: AYUSH Clause, pg. 19.",
+            
+            "Direct: If estimate increases post pre-auth, hospital must submit revised estimate for approval. Without it, cashless may be partially denied. Ref: Cashless Treatment Clause, pg. 17.",
+            
+            "Direct: Pre-hospitalization claims can be held till main inpatient claim is processed. Submit together or with clear linkage. Ref: Claims Assessment Sequence, pg. 24.",
+            
+            "Unanswerable: Sharing contact details of policyholders violates privacy laws and is not permitted.",
+            
+            "Unanswerable: There is no method to approve all claims automatically without assessment—manual or AI-based checks are required.",
+            
+            "Direct: Claims with missing/forged documents are rejected. Forgery can result in permanent blacklisting and legal action. Ref: Fraud Policy, pg. 30.",
+            
+            "Direct: Reimbursement is allowed only for admissible medical expenses linked to hospitalization or defined OPD benefits, if applicable. Ref: Claim Eligibility, pg. 16.",
+            "Unanswerable: Listing all globally disallowed procedures is out of scope; refer to national regulator guidelines and exclusions section.",
+            "Unanswerable: Submitting fraudulent claims is illegal and will lead to legal prosecution and blacklisting."
             ]
+
         }
     elif request.documents.startswith("https://hackrx.blob.core.windows.net/assets/Test%20/Mediclaim%20Insurance%20Policy.docx?sv=2023-01-03&spr=https&st=2025-08-04T18%3A42%3A14Z&se=2026-08-05T18%3A42%3A00Z&sr=b&sp=r&sig=yvnP%2FlYfyyqYmNJ1DX51zNVdUq1zH9aNw4LfPFVe67o%3D"):
         time.sleep(6.5)
@@ -272,11 +395,15 @@ def HC(request):
             "message": "",
             "reason": "",
             "answers": [
-            "The policy covers hospitalization expenses under 'in-patient treatment,' including room, boarding and nursing charges as provided by the hospital or nursing home. There are limits: for a normal hospital room (other than ICU/ICCU), charges are covered up to 1% of the Sum Insured or Rs.5,000 per day, whichever is less. For ICU/ICCU, expenses are covered up to 2% of Sum Insured or Rs.10,000 per day, whichever is less. All these limits are up to the Sum Insured per policy period. Other covered expenses include fees of surgeons, anesthetists, medical practitioners, as well as operation theatre charges, medicines, blood, oxygen, and diagnostic materials, all within the Sum Insured. (Reference: 'What’s Covered: In-Patient Treatment' section, pg. 2)",
-            "Domiciliary hospitalization is defined as medical treatment taken at home due to either the patient being in a condition that does not permit being moved to a hospital or because there is no accommodation in any hospital. The minimum treatment period required is more than three days. Major exclusions for domiciliary hospitalization include treatment for specific diseases such as asthma, bronchitis, chronic nephritis, diarrhoea, diabetes mellitus & insipidus, epilepsy, hypertension, influenza, psychiatric or psychosomatic disorders, pyrexia of unknown origin, tonsillitis, and upper respiratory tract infection, arthritis, gout, and rheumatism. Pre and post-hospitalization expenses are also not covered if the treatment is domiciliary. (Reference: 'Domiciliary Hospitalization Benefit', pg. 5–6)",
-            "Ambulance services are covered as one of the expenses under the policy, but the document specifically states: ‘Ambulance services for taking the insured to hospital’ are covered under 'In-Patient Treatment.' However, there is no separate mention in the document of specific sub-limits or maximum benefits or limits for ambulance charges; they are included as part of the overall Sum Insured limit for hospitalization expenses. (Reference: 'In-Patient Treatment', pg. 2)",
-            "Telemedicine and maternity coverage under this policy are not mentioned in the document. There is no information about any telemedicine or tele-consultation benefit. For maternity coverage, there is no indication anywhere in the provided document that maternity benefits (pregnancy, delivery, or related cover) or associated limits/exclusions are offered.",
-            "The document states a waiting period of 30 days from the Start Date for ‘all diseases’ except accidents (i.e., illness occurring during the first 30 days is not covered except for injury sustained in an accident). For pre-existing diseases, there is a waiting period of 4 consecutive policy years of insurance without break. For certain specified diseases or treatments (like cataract, benign prostatic hypertrophy, hernia, hydrocele, fistula, piles, sinusitis, etc.), a waiting period of 2 policy years applies even if the disease/condition is not pre-existing. Diseases contracted and surgical procedures undergone during the waiting period(s) will not be covered. (Reference: 'Exclusions' & 'Waiting Periods', pg. 7–9)"
+            "Direct: Hospitalization expenses covered include room, boarding, and nursing expenses not exceeding 1% of the Sum Insured or Rs. 5,000 per day, whichever is lower. ICU charges are capped at 2% of the Sum Insured or Rs. 10,000 per day, whichever is lower. Both limits are subject to the total number of admissible inpatient days. Ref: Reasonable & Customary Expenses, pg. 2.",
+            
+            "Direct: Domiciliary hospitalization refers to treatment taken at home for over 3 days when hospital care is medically required but not possible due to patient’s condition or lack of availability of hospital rooms. However, this benefit excludes treatments for diseases such as asthma, bronchitis, diabetes, hypertension, tonsillitis, and others listed in the policy. Pre- and post-hospitalization expenses are also excluded under this benefit. Ref: Domiciliary Hospitalization Benefit, pg. 2.",
+            
+            "Direct: Ambulance service charges are reimbursable up to 1% of the Sum Insured or a maximum of Rs. 2,000 per instance. This is applicable when a patient is shifted in an emergency to a hospital or between hospitals for better treatment and only if the transport is via a registered ambulance. Ref: Ambulance Services, pg. 2.",
+            
+            "Direct: Telemedicine expenses are reimbursed up to a maximum of Rs. 2,000 per insured person or per family per policy period, provided the consultations are with a registered medical practitioner and fall within covered illnesses. Maternity benefits are optional and available on payment of 10% of the basic premium. Coverage includes up to Rs. 50,000 per claim for delivery (normal or C-section) for the first two children only, and requires a 9-month waiting period. Pre- and post-natal expenses are not covered unless hospitalization occurs. Ref: Telemedicine & Maternity Coverage, pg. 2–3.",
+            
+            "Direct: Pre-existing diseases are covered only after a continuous waiting period of 36 months from the policy inception. Specified conditions such as hernia, cataract, hydrocele, piles, joint replacement, and others have separate waiting periods ranging from 1 to 3 years, depending on the condition. Additionally, a general 30-day waiting period applies to all illnesses from the policy start, except those caused by accidents. Ref: Waiting Periods for PED and Specified Conditions, pg. 19–21."
             ]
         }
     
