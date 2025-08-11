@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # Resolve OpenMP conflict
@@ -15,6 +16,18 @@ from ..Utils.parameter_selector import AdaptiveParameterSelector
 from ..Utils.check_answers import HC, hard_coded_urls
 import time
 import signal
+
+# near top imports
+try:
+    from .mission_handler import detect_mission, run_mission_from_pdf_text
+except Exception:
+    try:
+        from .mission_handler import detect_mission, run_mission_from_pdf_text
+    except Exception:
+        # safe fallbacks so module still loads if mission_handler not present
+        detect_mission = lambda text: False
+        run_mission_from_pdf_text = lambda text: None
+
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["hackrx"], prefix="/api/v1")
@@ -75,15 +88,7 @@ def process_document_questions(
         raise HTTPException(status_code=400, detail="Maximum 50 questions allowed per request")
     
     
-    
-    logger.info(f"Checking for hard-coded answers")
-    if request.documents in hard_coded_urls:
-        result = HC(request=request)
-        if result and 'answers' in result:
-            logger.info("Using hard-coded answers")
-            return HackRXResponse(answers=result['answers'])
-        else:
-            logger.warning("Document in hard-coded list but no answers matched. Falling back to RAG processing")
+
             
     PROCESS_TIMEOUT = 20 
             
@@ -153,6 +158,40 @@ def process_document_questions(
             raise HTTPException(status_code=400, detail="Document content too short or empty")
         
         logger.info(f"Document contains {len(document_text)} characters")
+
+        # --- Mission handler short-circuit ---
+        try:
+            if detect_mission(document_text):
+                logger.info("Mission document detected — using specialised mission handler")
+
+                # run the mission solver (may call external allowed endpoints)
+                mission_result = run_mission_from_pdf_text(document_text)
+
+                # Normalize mission_result -> list of answers matching request.questions length
+                if isinstance(mission_result, dict):
+                    # if mission handler returned structured dict with "answers"
+                    if "answers" in mission_result and isinstance(mission_result["answers"], list):
+                        answers = mission_result["answers"]
+                    else:
+                        # convert dict into single JSON string answer
+                        answers = [json.dumps(mission_result)]
+                elif isinstance(mission_result, str):
+                    # give single string repeated for each question so response_model still valid
+                    answers = [mission_result] * len(request.questions)
+                elif mission_result is None:
+                    # no useful result, fall through to normal processing
+                    answers = None
+                else:
+                    answers = [str(mission_result)] * len(request.questions)
+
+                if answers:
+                    logger.info("Returning mission handler answers and skipping normal pipeline")
+                    return HackRXResponse(answers=answers)
+
+        except Exception as e:
+            logger.warning(f"Mission handler raised an exception; falling back to normal flow: {e}")
+        # --- end mission handler short-circuit ---
+
         
         # Special handling for images
         is_image = request.documents.startswith(("http://", "https://")) and file_type in ['jpg', 'jpeg', 'png', 'gif'] # type: ignore
