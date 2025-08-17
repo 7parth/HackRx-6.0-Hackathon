@@ -149,11 +149,11 @@ POST /api/v1/hackrx/run
 
 This project was built for the **Bajaj Finserv HackRx Hackathon** to demonstrate how **AI-powered document intelligence** can:
 
-# 🏆 Achieve **67th** rank out of 4800 teams in the hackathon
-# 📑 Extract insights from complex documents
-# ⚡ Accelerate business decision-making
-# 🔒 Ensure security with caching & authentication
-# 🚀 Scale with Docker for enterprise-ready deployment
+- 🏆 Achieve **67th** rank out of 4800 teams in the hackathon
+- 📑 Extract insights from complex documents
+- ⚡ Accelerate business decision-making
+- 🔒 Ensure security with caching & authentication
+- 🚀 Scale with Docker for enterprise-ready deployment
 
 ---
 
