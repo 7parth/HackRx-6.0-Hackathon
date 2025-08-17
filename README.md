@@ -6,6 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue?logo=python)]()
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)]()
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)  
 
 Built for **Bajaj Finserv HackRx Hackathon**, this project is a **FastAPI-based backend** designed for advanced **document Q&A**. It combines **Retrieval-Augmented Generation (RAG)**, **Google Gemini LLM**, and **FAISS** for fast, accurate, and scalable question answering across multiple document formats.  
 
@@ -101,6 +102,20 @@ uvicorn App.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
+
+### 🚀 Live Demo  
+
+Deployed here:  
+👉 [HackRX RAG API on Render](https://hackrx6-repo-bajaj-finserv.onrender.com)  
+
+- **API Docs**: [https://hackrx6-repo-bajaj-finserv.onrender.com/docs](https://hackrx6-repo-bajaj-finserv.onrender.com/docs)  
+- **Main Endpoint**:  
+  ```
+  POST https://hackrx6-repo-bajaj-finserv.onrender.com/api/v1/hackrx/run
+  ```  
+
+---
+
 ## 🔑 Configuration  
 
 Set environment variables in `App/.env`:  
@@ -149,11 +164,11 @@ POST /api/v1/hackrx/run
 
 This project was built for the **Bajaj Finserv HackRx Hackathon** to demonstrate how **AI-powered document intelligence** can:
 
-- 🏆 Achieve **67th** rank out of 4800 teams in the hackathon
-- 📑 Extract insights from complex documents
-- ⚡ Accelerate business decision-making
-- 🔒 Ensure security with caching & authentication
-- 🚀 Scale with Docker for enterprise-ready deployment
+- 🏆 Achieve **67th** rank out of 4800 teams in the hackathon  
+- 📑 Extract insights from complex documents  
+- ⚡ Accelerate business decision-making  
+- 🔒 Ensure security with caching & authentication  
+- 🚀 Scale with Docker for enterprise-ready deployment  
 
 ---
 
